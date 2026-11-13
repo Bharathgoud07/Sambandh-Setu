@@ -9,7 +9,12 @@ const connectDB = async () => {
 
         console.log("MongoDB connected successfully");
     } catch (error) {
-        console.error("MongoDB connection failed:", error.message);
+        // Driver messages can embed connection details; log the type only.
+        console.error(
+            "MongoDB connection failed: name=%s code=%s",
+            error.name || "Error",
+            error.code || "none"
+        );
         throw error;
     }
 };
