@@ -1,0 +1,13 @@
+# Gitleaks configuration - Setu backend.
+#
+# Extends the default rule set (so every built-in detector stays active) and
+# allowlists the known synthetic seed values reviewed during D1-03. Anything
+# else - including any real credential - still fails the scan.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Seed fixture keys in backend/seed/b2Fixtures.js (reflection-01..10)"
+regexTarget = "secret"
+regexes = ['''^reflection-\d{2}$''']
