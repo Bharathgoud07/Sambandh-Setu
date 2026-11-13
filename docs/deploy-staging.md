@@ -40,6 +40,15 @@ Alternative to the dashboard: commit `render.yaml` and use
 **New + -> Blueprint**. The four `sync: false` values still have to be filled
 in manually.
 
+## 2a. Live staging (2026-11-13)
+
+- URL: `https://sambandh-setu-backend.onrender.com`
+- Service: `sambandh-setu-backend` (Docker, Free, Singapore)
+- Deployed branch: `devops/D2-21-staging-deploy` until this PR merges; switch
+  the service to `dev` afterwards.
+- `/health` returns `200 {"data":{"status":"ready"}}`. UptimeRobot pings it every
+  5 minutes (keep-warm) and alerts the lead's email.
+
 ## 3. Verify (automatable)
 
 ```bash
