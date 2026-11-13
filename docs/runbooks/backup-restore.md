@@ -120,7 +120,30 @@ mongosh "$MONGODB_URI" --quiet --eval '
 3. Alert on failure (email or an UptimeRobot heartbeat).
 4. Run this restore drill **monthly** and record the result.
 
-## 8. Production notes
+## 8. Production status (2026-11-13)
+
+Read-only inventory of the production project (`Project 0`, org
+`andhyala's Org`, cluster `Sambandh-Setu`):
+
+- Replica set, MongoDB 8.0, **Cloud Backup disabled** (`backupEnabled=false`).
+- Only database user: `bharathandhyala_db_user` (`atlasAdmin` on `admin`). Its
+  password was rotated on 2026-11-13 as part of D1-02; apps must use the new
+  credential from the secure store.
+- Network access is an allow-list of eight team IPs; the staging/Render egress
+  IP is **not** present, so a production dump cannot be taken from this host
+  today.
+- Our project role: **Project Read Only** + **Project Database Access Admin**
+  (can rotate database users, cannot change network access or cluster tier).
+
+Actions for the project owner (Bharath/Ujala):
+
+1. Add the backup runner IP to Network Access, or run the dump from an allowed
+   machine.
+2. Take a one-off `mongodump` before launch and store it off-cluster.
+3. For continuous backup/PITR, upgrade the cluster to M10+ and enable Cloud
+   Backup.
+
+## 9. Production notes
 
 - Request access to Bharath's Atlas project before the launch; keep production
   and staging credentials separate.
