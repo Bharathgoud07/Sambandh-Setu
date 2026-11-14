@@ -10,6 +10,10 @@ Updated: 2026-11-14.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
 > host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
+>
+> **Free-only policy:** no paid plan, paid add-on, paid static IP or paid backup
+> tier. Production stays on Render Free and Atlas M0. If a free limit blocks
+> launch, escalate to the lead; never purchase or click a paid upgrade.
 
 Companion documents (merge with the D3 PRs):
 
@@ -77,10 +81,12 @@ Rules:
 2. Run the isolation check before every production deploy:
    `node scripts/check-prod-config.js --prod <prod.env> --staging <staging.env>`.
 3. Production Atlas network access is currently `0.0.0.0/0` because Render free
-   egress has no static IP. Replace with static egress/private endpoint when
-   available.
-4. `setu-production` is M0: **Cloud Backup/PITR is disabled**. The launch
-   fallback is a manual `mongodump` (section 9).
+   egress has no static IP. Static egress/private endpoints are paid and **not
+   approved**; keep the strong DB password/TLS and revisit only with company
+   budget approval.
+4. `setu-production` is M0: **Cloud Backup/PITR is disabled**. An M10+ upgrade is
+   paid and **not approved**; the launch path is a manual `mongodump` + restore
+   drill (section 9).
 5. Production `NODE_ENV=production`. This disables `/auth/dev-login`; real
    signup must use the OTP flow.
 
@@ -149,7 +155,8 @@ Vercel bundle still contains `https://REPLACE-WITH-STAGING-URL` and
 
 1. Render → **New +** → **Web Service** → `Bharathgoud07/Sambandh-Setu`.
 2. Branch `dev`; runtime **Docker**; Dockerfile `./Dockerfile`; context `.`.
-3. Name `sambandh-setu-api-prod`; region Singapore; plan Free or paid.
+3. Name `sambandh-setu-api-prod`; region Singapore; plan **Free** (paid plans
+   are not approved).
 4. Health check `/health`.
 5. Add env names from section 3; values from the host secret store.
 6. Deploy; wait for **Live**.
@@ -164,7 +171,8 @@ Full step-by-step: `docs/deploy-production.md`.
 2. Branch `dev`; runtime **Python**.
 3. Build `pip install -r requirements.txt`.
 4. Start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-5. Name `setu-guide-prod`; region Singapore; paid recommended for always-on.
+5. Name `setu-guide-prod`; region Singapore; plan **Free** plus keep-warm
+   monitor (paid always-on is not approved).
 6. Health check `/health`.
 7. Env: `USE_MOCK=true`, `LLM_PROVIDER=placeholder`, limits/cache/log values
    from section 3.
@@ -381,16 +389,15 @@ remove it, or drop the temp DB in the Atlas UI.
 5. Verify `/health`, counts and a smoke test.
 6. Announce recovery, data-loss window and follow-ups.
 
-### 9.5 M10+ upgrade (preferred)
+### 9.5 M10+ upgrade (not approved; future only)
 
-Atlas → `Setu Production` → `setu-production` → **Edit Configuration** → M10 →
-enable **Cloud Backup** → apply. Then:
+M10+ is a paid tier and is **not approved**. Do not click it. The launch path
+is the manual `mongodump` + restore drill above; record RPO up to 24 h as an
+accepted risk.
 
-```bash
-node scripts/check-prod-backup.js
-```
-
-It must print a snapshot ID. M10+ enables PITR and a much lower RPO.
+Only after explicit company budget approval: Atlas → `Setu Production` →
+`setu-production` → **Edit Configuration** → M10 → enable **Cloud Backup** →
+apply. Then `node scripts/check-prod-backup.js` must print a snapshot ID.
 
 ## 10. Alert response
 
@@ -476,7 +483,7 @@ Current gaps (2026-11-14):
 | CORS error in browser | response `Access-Control-Allow-Origin` | fix `CORS_ORIGINS` allow-list; no `*` in prod |
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
-| Slow first Guide call | free instance asleep | 5-min monitor or paid always-on |
+| Slow first Guide call | free instance asleep | 5-min monitor; paid always-on is not approved, escalate if capacity is insufficient |
 | Port bind error on Guide | Dockerfile hardcodes 8000 | use native Python / `$PORT` |
 | Frontend hits staging | bundle string | rebuild with prod `EXPO_PUBLIC_API_URL` |
 | OTP email missing | `EMAIL_API_KEY`, provider logs | fix key; check spam; do not log OTP |
