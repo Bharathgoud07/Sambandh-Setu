@@ -516,8 +516,8 @@ mongodump --uri="$MONGODB_URI" --out="/backups/setu-prod-$(date +%F)" --quiet
 | Path | Purpose |
 |---|---|
 | `backend/server.js` | Express app, health, routes |
-| `backend/Dockerfile` | production Node image |
-| `backend/render.yaml` | staging Render blueprint |
+| `Dockerfile` | production Node image |
+| `render.yaml` | staging Render blueprint |
 | `scripts/smoke-test.js` | cross-platform smoke test; `.sh`/`.ps1` wrappers |
 | `scripts/check-prod-config.js` | fails on staging reuse/placeholders |
 | `scripts/check-prod-backup.js` | Atlas backup/snapshot readiness |
