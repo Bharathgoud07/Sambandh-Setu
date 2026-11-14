@@ -12,10 +12,12 @@ const homeRoutes = require("./routes/homeRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorMiddleware");
+const { initSentry, captureException } = require("./config/sentry");
 const ApiError = require("./utils/ApiError");
 const mongoose = require("mongoose");
 
 dotenv.config();
+initSentry();
 
 const app = express();
 
@@ -54,6 +56,14 @@ app.use("/notifications", notificationRoutes);
 app.use("/chats", chatRoutes);
 
 app.use(notFoundHandler);
+
+// Optional Sentry capture (no-op unless SENTRY_DSN is set). Only 5xx errors
+// are sent; request bodies, headers and query strings are never attached.
+app.use((error, req, res, next) => {
+    captureException(error, req);
+    next(error);
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
