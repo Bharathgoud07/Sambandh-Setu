@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { after, before, test } = require("node:test");
 const User = require("../models/User");
+const { validateProfilePatch } = require("../controllers/profileController");
 const { app } = require("../server");
 
 let server;
@@ -103,4 +104,58 @@ test("development login is unavailable outside development mode", async () => {
             process.env.NODE_ENV = originalNodeEnv;
         }
     }
+});
+
+test("D1-20: accepts valid profile languages", () => {
+    const result = validateProfilePatch({
+        languages: ["English", "Telugu", "Hindi"]
+    });
+
+    assert.deepEqual(result.languages, ["English", "Telugu", "Hindi"]);
+});
+
+test("D1-20: normalizes language capitalization and whitespace", () => {
+    const result = validateProfilePatch({
+        languages: [" english ", "TELUGU", " hindi "]
+    });
+
+    assert.deepEqual(result.languages, ["English", "Telugu", "Hindi"]);
+});
+
+test("D1-20: removes duplicate languages", () => {
+    const result = validateProfilePatch({
+        languages: ["English", "english", "Telugu", "TELUGU"]
+    });
+
+    assert.deepEqual(result.languages, ["English", "Telugu"]);
+});
+
+test("D1-20: rejects unsupported languages", () => {
+    assert.throws(
+        () => validateProfilePatch({ languages: ["English", "French"] }),
+        (error) => error.status === 400 && error.code === "VALIDATION_ERROR"
+    );
+});
+
+test("D1-20: rejects an empty languages array", () => {
+    assert.throws(
+        () => validateProfilePatch({ languages: [] }),
+        (error) => error.status === 400 && error.code === "VALIDATION_ERROR"
+    );
+});
+
+test("D1-20: rejects more than five unique languages", () => {
+    assert.throws(
+        () => validateProfilePatch({
+            languages: ["English", "Hindi", "Tamil", "Telugu", "Kannada", "Marathi"]
+        }),
+        (error) => error.status === 400 && error.code === "VALIDATION_ERROR"
+    );
+});
+
+test("D1-20: rejects non-array language values", () => {
+    assert.throws(
+        () => validateProfilePatch({ languages: "English" }),
+        (error) => error.status === 400 && error.code === "VALIDATION_ERROR"
+    );
 });

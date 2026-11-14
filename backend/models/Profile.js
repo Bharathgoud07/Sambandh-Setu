@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const { APPROVED_LANGUAGES } = require("../constants/languages");
+
 const profileSchema = new mongoose.Schema(
     {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
@@ -12,6 +14,13 @@ const profileSchema = new mongoose.Schema(
         education: { type: String, trim: true, maxlength: 120, default: "" },
         profession: { type: String, trim: true, maxlength: 120, default: "" },
         interests: { type: [String], default: [] },
+        languages: {
+                type: [{
+                    type: String,
+                    enum: APPROVED_LANGUAGES
+                }],
+                default: []
+            },
         lifestyle: {
             routine: { type: String, trim: true, maxlength: 300, default: "" },
             interests: { type: [String], default: [] }
