@@ -108,12 +108,17 @@ node --test test/prod-config-isolation.test.js
 
 ## 4. Risks and decisions
 
+> **Free-only policy:** no paid upgrades, paid plans, paid static IPs or paid
+> backup tiers. If a free-tier limit blocks launch, escalate to the lead; never
+> purchase or click a paid upgrade.
+
 1. **Network access is `0.0.0.0/0`.** Atlas SCRAM + TLS protect the cluster, but
-   this is broader than needed. Replace with Render static outbound IPs (paid)
-   or a private endpoint before public launch if possible.
-2. **No Atlas Cloud Backup on M0.** `backupEnabled=false`; D3-14's "snapshot
-   exists" cannot pass without an M10+ upgrade. Manual `mongodump` is the
-   launch fallback.
+   this is broader than needed. Render static outbound IPs/private endpoints are
+   paid and **not approved**; keep `0.0.0.0/0` with a strong DB password and
+   revisit only if the company approves budget.
+2. **No Atlas Cloud Backup on M0.** `backupEnabled=false`; an M10+ upgrade is
+   paid and **not approved**. The launch path is a manual `mongodump` plus a
+   restore drill (RPO up to 24 h); document it as the accepted risk.
 3. **Render access is not available to this workstation.** The Node and Guide
    production services and their env vars must be created in the Render
    dashboard (or via a locally stored API token). Until then the production
