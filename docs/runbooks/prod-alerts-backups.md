@@ -3,11 +3,16 @@
 Owner: Aditya (DevOps 1). Updated: 2026-11-14.
 No secret values in this file.
 
+> **Free-only policy:** no paid plan, paid add-on, paid static IP or paid
+> backup tier. The production cluster stays on M0; the accepted backup path is
+> a manual `mongodump` + restore drill. Never click a paid upgrade.
+
 ## 0. Preconditions
 
 - [ ] Production Node and Guide URLs are live (D3-12).
-- [ ] UptimeRobot alert contact `9033668` is still the team channel
-      (`ujala12349@gmail.com`); Slack/Discord webhook pending D2-23.
+- [ ] UptimeRobot alert contact `9033668` is still the team channel; confirm
+      the address in the dashboard. Do not put personal emails in this public
+      repo.
 - [ ] Atlas production project `Setu Production`
       (`6af7de8d05cbff3cac56c9e5`) / cluster `setu-production`.
 
@@ -76,15 +81,11 @@ Expected today: **FAIL** because `setu-production` is M0
 (`backupEnabled=false`). M0 does not support Cloud Backup or point-in-time
 recovery.
 
-Two launch-safe options:
+Free-only path (approved):
 
-1. **Upgrade to M10+ (recommended for launch):**
-   Atlas → `Setu Production` → `setu-production` → **Edit Configuration** →
-   M10 → enable **Cloud Backup** → apply. Then re-run
-   `node scripts/check-prod-backup.js`; it must print a snapshot ID.
-2. **Manual `mongodump` fallback (M0):**
+1. **Manual `mongodump` + restore drill (M0):**
    - Run from an allowed host (production network is currently `0.0.0.0/0`;
-     restrict it after launch).
+     restrict it after launch if a free option appears).
    - Command template — never paste the real URI into a ticket or chat:
      ```bash
      mongodump --uri="$MONGODB_URI" --out="/backups/setu-prod-$(date +%F)" --quiet
@@ -92,6 +93,12 @@ Two launch-safe options:
    - Store the dump off-cluster, encrypted.
    - Restore into a **temporary database** first, verify counts, then drop it.
    - Take one dump before launch and one after the pilot starts.
+   - Accepted risk: RPO up to 24 h; document it in the launch sign-off.
+
+Future option (requires explicit company budget approval; **do not click now**):
+Atlas → `Setu Production` → `setu-production` → **Edit Configuration** → M10 →
+enable **Cloud Backup** → apply. Only after approval, re-run
+`node scripts/check-prod-backup.js`; it must print a snapshot ID.
 
 ## 4. Evidence to attach to D3-14
 
@@ -101,7 +108,7 @@ Two launch-safe options:
 | Guide monitor ID | |
 | Test alert timestamp | |
 | Alert confirmed by | |
-| Atlas backup mode | M0 manual / M10 Cloud Backup |
+| Atlas backup mode | M0 manual dump (free-only) |
 | Snapshot ID / dump path | |
 | Restore drill result | |
 
