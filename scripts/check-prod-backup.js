@@ -37,7 +37,7 @@ const main = () => {
     console.log(`cluster=${CLUSTER} tier=${cluster.clusterType ?? "unknown"} backupEnabled=${cluster.backupEnabled}`);
     if (cluster.backupEnabled !== true) {
         console.error("FAIL Cloud Backup is disabled. M0 does not support Cloud Backup/PITR.");
-        console.error("      Decide: upgrade to M10+ (enable Cloud Backup) or use the manual mongodump fallback.");
+        console.error("      M10+ is paid and NOT approved; use the manual mongodump fallback unless the company approves budget.");
         process.exit(1);
     }
 
