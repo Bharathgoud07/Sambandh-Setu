@@ -18,11 +18,11 @@ D2-23. Production adds no new application variables.
 | DB user | **`setu_prod_app`** (`readWrite` on `sambandh_setu`; no admin role) | `setu_staging` |
 | Network access | `0.0.0.0/0` (**temporary**, see risk) | `0.0.0.0/0` |
 | Cloud Backup | **disabled (M0 limitation)** | disabled (M0 limitation) |
-| Node service | `sambandh-setu-api-prod` (to create) | `sambandh-setu-backend` |
-| Guide service | `setu-guide-prod` (to create) | `setu-guide-1wiy` |
+| Node service | `sambandh-setu-api-prod` (live 2026-11-16) | `sambandh-setu-backend` |
+| Guide service | `setu-guide-prod` (live 2026-11-16) | `setu-guide-1wiy` |
 | Sentry environment | `production` (new project/DSN) | `staging` |
 
-Production URLs (proposed, confirm after service creation):
+Production URLs (live 2026-11-16):
 
 - Node: `https://sambandh-setu-api-prod.onrender.com`
 - Guide: `https://setu-guide-prod.onrender.com`
@@ -144,10 +144,10 @@ node --test test/prod-config-isolation.test.js
 2. **No Atlas Cloud Backup on M0.** `backupEnabled=false`; an M10+ upgrade is
    paid and **not approved**. The launch path is a manual `mongodump` plus a
    restore drill (RPO up to 24 h); document it as the accepted risk.
-3. **Render access is not available to this workstation.** The Node and Guide
-   production services and their env vars must be created in the Render
-   dashboard (or via a locally stored API token). Until then the production
-   URLs do not exist.
+3. **Render production services live in Ujala's workspace.** Render Free cannot
+   add team members, so Aditya manages them through a locally stored API token
+   instead of dashboard membership. The API key must be revoked after the final
+   production operation; do not commit or paste it.
 4. **Guide mode.** `USE_MOCK=true` keeps the template fallback and avoids a
    vendor key; flip to `false` only with a new `LLM_API_KEY` and an exercised
    `handle_chat`.
