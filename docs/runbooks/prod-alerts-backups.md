@@ -24,11 +24,13 @@ Dashboard (exact steps):
 2. Type **HTTP(s)**.
 3. Friendly name `Setu PROD - Node /health`; URL
    `https://sambandh-setu-api-prod.onrender.com/health`.
-4. Monitoring interval **5 minutes**.
+4. Monitoring interval **30 minutes**. This is the free-only compromise: a
+   5-minute keep-warm check would consume about 744 instance-hours/month per
+   service, but Render Free allows ~750 per workspace.
 5. Alert contacts: `9033668` (team email).
 6. Create. For the Guide use `Setu PROD - Guide liveness` with
    `https://setu-guide-prod.onrender.com/openapi.json`.
-7. Confirm both show **Up** within 5 minutes.
+7. Confirm both show **Up** after their first check (up to 30 minutes).
 
 **Why `/openapi.json` for the Guide?** UptimeRobot Free sends `HEAD` (choosing
 `GET` is a paid feature). FastAPI's `GET /health` returns **405** to `HEAD`,
@@ -40,8 +42,13 @@ Created 2026-11-16 with the API script:
 
 | Service | Monitor ID | State |
 |---|---|---|
-| Guide liveness (`/openapi.json`) | `804695804` | **Up** (HTTP 200; 5-minute interval) |
-| Node `/health` | `804695322` | **Up** after the 2026-11-16 production deploy (`/health` returned `200 ready`) |
+| Guide liveness (`/openapi.json`) | `804695804` | **Up** (HTTP 200; 30-minute interval) |
+| Node `/health` | `804695322` | **Up** after the 2026-11-16 production deploy (`/health` returned `200 ready`; 30-minute interval) |
+
+The staging keep-warm monitors (`804664536`, `804661990`) were **paused** on
+2026-11-16 so staging can sleep. Production cold starts are accepted until a
+free always-on option or paid plan is approved; alert detection can lag by up
+to 30 minutes.
 
 A direct Guide `GET /health` returned `200 {"status":"ok"}` in 22.8 s after the
 first Render cold start. D3-14 still needs the UptimeRobot test-alert receipt
@@ -79,7 +86,7 @@ Option A — alert-contact test (fastest):
 Option B — monitor event (closer to production):
 
 1. Add a temporary monitor `Setu PROD alert test` with URL
-   `https://httpstat.us/500`, interval 5 minutes, same alert contact.
+   `https://httpstat.us/500`, interval 30 minutes, same alert contact.
 2. Wait for the first check; it should go **Down** and send an alert.
 3. Confirm the channel; delete the temporary monitor.
 4. Record monitor ID, event time, and confirmer.
@@ -176,11 +183,11 @@ D3-14 is **NEEDS MANUAL STEP**, not DONE.
 - Alert channel is email only until the Slack/Discord webhook exists.
 - UptimeRobot API key exposure means a new key is required before trusting
   monitor automation.
-- Free Render instances sleep; without the 5-minute monitor the Guide first
-  call can exceed 5 s.
-- **Free-hour conflict:** four 5-minute keep-warm monitors (staging Node/Guide
-  and production Node/Guide) keep all four services awake. Render Free includes
-  about 750 instance-hours/month per workspace; four always-on services exceed
-  that. The lead must choose: pause staging monitors, let one production service
-  sleep (accept cold starts / `503 GUIDE_UNAVAILABLE`), or approve a paid plan
-  (not approved). Do not leave all four warm for a full month.
+- Free Render instances sleep; production checks run every 30 minutes, so the
+  first request after sleep can be slow or return `503 GUIDE_UNAVAILABLE` until
+  the Guide wakes.
+- **Free-hour decision (2026-11-16):** Render Free allows about 750
+  instance-hours/month per workspace. Four 5-minute keep-warm monitors exceeded
+  that by roughly 4x. Staging keep-warm monitors were paused; production checks
+  are 30 minutes, so services can sleep between checks. Alerts can lag by up to
+  30 minutes and cold starts are accepted. No paid plan was purchased.
