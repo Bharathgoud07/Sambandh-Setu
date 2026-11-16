@@ -61,5 +61,9 @@ function New-ProdMonitor([string]$Name, [string]$Url) {
 }
 
 New-ProdMonitor "Setu PROD - Node /health" "$nodeUrl/health"
-New-ProdMonitor "Setu PROD - Guide /health" "$guideUrl/health"
+
+# UptimeRobot Free sends HEAD by default. FastAPI's GET-only /health returns
+# 405 to HEAD, so monitor /openapi.json (HEAD 200) as the Guide liveness check.
+New-ProdMonitor "Setu PROD - Guide liveness" "$guideUrl/openapi.json"
+
 Write-Output "Alert contact id: $AlertContactId (confirm it is the team channel)"

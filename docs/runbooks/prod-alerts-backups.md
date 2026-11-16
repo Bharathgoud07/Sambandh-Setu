@@ -26,21 +26,26 @@ Dashboard (exact steps):
    `https://sambandh-setu-api-prod.onrender.com/health`.
 4. Monitoring interval **5 minutes**.
 5. Alert contacts: `9033668` (team email).
-6. Create. Repeat for `Setu PROD - Guide /health` with
-   `https://setu-guide-prod.onrender.com/health`.
+6. Create. For the Guide use `Setu PROD - Guide liveness` with
+   `https://setu-guide-prod.onrender.com/openapi.json`.
 7. Confirm both show **Up** within 5 minutes.
+
+**Why `/openapi.json` for the Guide?** UptimeRobot Free sends `HEAD` (choosing
+`GET` is a paid feature). FastAPI's `GET /health` returns **405** to `HEAD`,
+while `/openapi.json` (and `/docs`) returns **200** to `HEAD`. Monitoring
+`/openapi.json` proves the FastAPI app is serving; the Node `/health` check
+still includes the DB readiness state.
 
 Created 2026-11-16 with the API script:
 
 | Service | Monitor ID | State |
 |---|---|---|
-| Guide `/health` | `804695321` | live check; 60 s timeout because the first Render cold start can exceed 30 s |
+| Guide liveness (`/openapi.json`) | `804695804` | **Up** (HTTP 200; 5-minute interval) |
 | Node `/health` | `804695322` | **paused** until D3-12 deploys; unpause after `/health` returns 200 |
 
-The Guide monitor's first check returned `Bad Gateway` during the Render cold
-start. A later manual check returned `200 {"status":"ok"}` in 22.8 s. Keep the
-60 s timeout and 5-minute interval; do not mark the monitor healthy until the
-dashboard shows **Up**.
+A direct `GET /health` returned `200 {"status":"ok"}` in 22.8 s after the first
+Render cold start. Do not mark D3-14 done until the Node monitor is unpaused
+and **Up**.
 
 Script alternative (reads the API key from a local file; prints IDs only):
 
@@ -120,7 +125,7 @@ enable **Cloud Backup** → apply. Only after approval, re-run
 | Item | Value |
 |---|---|
 | Node monitor ID | `804695322` (paused until D3-12 deploy) |
-| Guide monitor ID | `804695321` |
+| Guide monitor ID | `804695804` (`/openapi.json` liveness; Up) |
 | Test alert timestamp | **pending** — manual contact `9033668` test not yet confirmed |
 | Alert confirmed by | **pending** |
 | Atlas backup mode | M0 manual dump (free-only) |
