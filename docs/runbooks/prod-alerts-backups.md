@@ -86,6 +86,12 @@ Option B — monitor event (closer to production):
 A production run is not done until a human confirms the alert arrived. No
 `--allow-skips` equivalent here.
 
+On 2026-11-16 a temporary `https://httpstat.us/500` monitor (`804695850`) was
+created, reset, and detected `Connection Timeout` at **21:40:37 IST**; the
+alert was sent to contact `9033668`. The monitor was deleted immediately after.
+The contact's owner must confirm receipt in the dashboard/email; contact
+`9033668` is not Aditya's mailbox.
+
 ## 3. Verify Atlas Cloud Backup
 
 Automated check (uses the Atlas CLI):
@@ -126,8 +132,8 @@ enable **Cloud Backup** → apply. Only after approval, re-run
 |---|---|
 | Node monitor ID | `804695322` (paused until D3-12 deploy) |
 | Guide monitor ID | `804695804` (`/openapi.json` liveness; Up) |
-| Test alert timestamp | **pending** — manual contact `9033668` test not yet confirmed |
-| Alert confirmed by | **pending** |
+| Test alert timestamp | `2026-11-16 21:40:37 IST` — temporary monitor `804695850`, event `Connection Timeout`; monitor deleted |
+| Alert confirmed by | **pending** — sent to contact `9033668`; owner must confirm receipt |
 | Atlas backup mode | M0 manual dump (free-only) |
 | Snapshot ID / dump path | `C:\Users\adity\AppData\Local\Temp\opencode\prod-dump-2026-11-16` (synthetic drill; 1 document) |
 | Restore drill result | **PASS** — 1 collection, 1/1 documents; local temp DB dropped; synthetic production collection dropped; production DB returned to 0 collections |
@@ -144,8 +150,9 @@ Drill log (2026-11-16):
 4. Dropped the local temp DB and the synthetic production collection; production
    has 0 collections again.
 
-**Remaining manual evidence:** a human must confirm the UptimeRobot test alert
-arrived at contact `9033668`.
+**Remaining manual evidence:** the owner of UptimeRobot contact `9033668`
+(Ujala's mailbox, not Aditya's) must confirm the test alert arrived. Until then,
+D3-14 is **NEEDS MANUAL STEP**, not DONE.
 
 ## 5. Risks
 
