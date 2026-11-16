@@ -1,0 +1,22 @@
+# Render blueprint for the Sambandh Setu Node backend (D2-21).
+# Values marked `sync: false` are set manually in the Render dashboard and are
+# never committed. Docs: docs/deploy-staging.md
+services:
+  - type: web
+    name: sambandh-setu-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GUIDE_SERVICE_URL
+        sync: false
