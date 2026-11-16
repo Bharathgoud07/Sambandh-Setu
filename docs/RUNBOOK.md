@@ -37,7 +37,7 @@ Companion documents (merge with the D3 PRs):
 | Setu Guide | FastAPI | `ujala100/setu-guide` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` | Ujala |
 | Primary DB | MongoDB Atlas | — | `setu-staging`, M0 | `setu-production`, M0 | Aditya |
 | Web/waitlist | static/Vercel | — | pending | pending | Pooja |
-| Monitoring | UptimeRobot | — | Node `804664536`, Guide `804661990` | Guide `804695321`; Node `804695322` (paused until live) | Aditya |
+| Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` | Guide liveness `804695804` (`/openapi.json`); Node `804695322` (paused until live) | Aditya |
 | Errors | Sentry (optional) | — | pending DSN | pending DSN | Ankit |
 
 Request path:
@@ -251,7 +251,7 @@ same minute (section 8).
 |---|---|---|
 | Node runtime logs | Render → service → **Logs** | request/error logs; no tokens, OTPs, messages or DB URI |
 | Guide runtime logs | Render → service → **Logs** | provider failures logged without message/topic/ids/key |
-| UptimeRobot | dashboard | 5-minute `/health` checks, alert contact `9033668` |
+| UptimeRobot | dashboard | Node `/health`; Guide `/openapi.json` (HEAD-safe free-plan check); 5-minute interval, alert contact `9033668` |
 | Sentry (optional) | Sentry project | 5xx only, PII-free events; no-op without `SENTRY_DSN` |
 | Atlas | Atlas → project → cluster | connections, CPU, disk, slow queries, backup state |
 | Deploy history | Render → Deploys | who/when/commit; rollback source |
@@ -273,7 +273,8 @@ Rules:
 
 Detection:
 
-1. UptimeRobot Guide monitor is down, or `/health` is not 200.
+1. UptimeRobot Guide liveness monitor (`/openapi.json`) is down, or a direct
+   `GET /health` is not 200.
 2. Render logs show timeouts/5xx from the provider.
 3. Node `/guide/chat` (once implemented) returns 502/504 or the friendly
    fallback.
