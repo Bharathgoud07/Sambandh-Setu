@@ -3,13 +3,13 @@
 Owner: Aditya (DevOps 1). Version: 1.0 (draft until production smoke passes).
 Updated: 2026-11-16.
 
-> **Launch-day status (2026-11-16):** staging is live; production Atlas and
-> Guide are live; the production Node service is created but its build is
-> blocked until backend PR #3 (Dockerfile + `/health`) merges into `dev`. OTP,
-> security middleware and Node `/guide/chat` are still not on `dev`. The
-> production DB role was corrected and a manual dump/restore drill passed. This
-> runbook becomes the production source of truth once the Node deploy and full
-> smoke test pass.
+> **Launch-day status (2026-11-16):** staging is live; production Atlas, Guide
+> and Node are live. Production Node `/health` returns `200 ready`; the smoke
+> test is **3 passed / 5 failed**. OTP, security middleware (Helmet/CORS) and
+> Node `/guide/chat` are still not on `dev`. The production DB role was
+> corrected, a manual dump/restore drill passed, and both production monitors
+> exist (Guide liveness Up; Node `/health` Up). This runbook becomes the
+> production source of truth once the full smoke test passes.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
 > host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
@@ -33,11 +33,11 @@ Companion documents (merge with the D3 PRs):
 | Layer | Technology | Repository | Staging | Production | Owner |
 |---|---|---|---|---|---|
 | Mobile/web app | Expo React Native | `karanpandeyklk/Setu_app` | `https://setu-app-ten.vercel.app` (web) | release build pending | Karan |
-| Node API | Express + Mongoose | `Bharathgoud07/Sambandh-Setu` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (build blocked on PR #3) | Bharath / Sakshi |
+| Node API | Express + Mongoose | `Bharathgoud07/Sambandh-Setu` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (live) | Bharath / Sakshi |
 | Setu Guide | FastAPI | `ujala100/setu-guide` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` | Ujala |
 | Primary DB | MongoDB Atlas | — | `setu-staging`, M0 | `setu-production`, M0 | Aditya |
 | Web/waitlist | static/Vercel | — | pending | pending | Pooja |
-| Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` | Guide liveness `804695804` (`/openapi.json`); Node `804695322` (paused until live) | Aditya |
+| Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` | Guide liveness `804695804` (`/openapi.json`, Up); Node `804695322` (`/health`, Up) | Aditya |
 | Errors | Sentry (optional) | — | pending DSN | pending DSN | Ankit |
 
 Request path:
@@ -165,6 +165,10 @@ Vercel bundle still contains `https://REPLACE-WITH-STAGING-URL` and
 6. Deploy; wait for **Live**.
 7. Verify: `GET /health` → `200 {"data":{"status":"ready"}}`; `/health/live`
    and `/health/ready` also 200.
+
+Live 2026-11-16 after PR #3 merged (`dev` commit `7f595cd`, deploy
+`dep-dbtintt9fdbs73bccqe0`); `/health` returned `200 ready` in 0.5 s and the
+UptimeRobot Node monitor is **Up**.
 
 Full step-by-step: `docs/deploy-production.md`.
 
@@ -454,7 +458,7 @@ tokens, OTPs or user data in the report.
 
 Exit criteria (Day 3):
 
-- [ ] Production Node + Guide live, `/health` green.
+- [x] Production Node + Guide live, `/health` green (2026-11-16).
 - [ ] Full smoke test passes (all 8 checks, no skips).
 - [ ] Production alerts fire to the team channel; test alert confirmed.
 - [ ] Atlas backup enabled with a snapshot, or manual dump+restore drill
@@ -471,9 +475,9 @@ Current gaps (2026-11-16):
 
 | Gap | Impact | Owner |
 |---|---|---|
-| Production Node build failed: `dev` lacks Dockerfile + `/health` (PR #3) | Node prod URL not live; D3-12 smoke blocked | lead/reviewers |
-| `dev` lacks merged Day 1/2 PRs | deploy would miss Dockerfile, health, CI, log fixes | lead/reviewers |
-| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev` | smoke checks 4-6 fail; no production login path | Sakshi |
+| Production smoke **3 passed / 5 failed** | cannot mark D3-12 done | lead/reviewers |
+| `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit |
+| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev` | OTP + `/guide/chat` smoke checks fail; no production login path | Sakshi |
 | CORS `*`, no Helmet, no auth rate limit | security exit criteria fail | Ankit |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
