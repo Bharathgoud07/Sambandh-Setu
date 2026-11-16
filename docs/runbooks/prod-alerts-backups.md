@@ -41,11 +41,12 @@ Created 2026-11-16 with the API script:
 | Service | Monitor ID | State |
 |---|---|---|
 | Guide liveness (`/openapi.json`) | `804695804` | **Up** (HTTP 200; 5-minute interval) |
-| Node `/health` | `804695322` | **paused** until D3-12 deploys; unpause after `/health` returns 200 |
+| Node `/health` | `804695322` | **Up** after the 2026-11-16 production deploy (`/health` returned `200 ready`) |
 
-A direct `GET /health` returned `200 {"status":"ok"}` in 22.8 s after the first
-Render cold start. Do not mark D3-14 done until the Node monitor is unpaused
-and **Up**.
+A direct Guide `GET /health` returned `200 {"status":"ok"}` in 22.8 s after the
+first Render cold start. D3-14 still needs the UptimeRobot test-alert receipt
+confirmation from contact `9033668`; both production monitors themselves are
+Up.
 
 Script alternative (reads the API key from a local file; prints IDs only):
 
@@ -130,7 +131,7 @@ enable **Cloud Backup** → apply. Only after approval, re-run
 
 | Item | Value |
 |---|---|
-| Node monitor ID | `804695322` (paused until D3-12 deploy) |
+| Node monitor ID | `804695322` (`/health`, Up) |
 | Guide monitor ID | `804695804` (`/openapi.json` liveness; Up) |
 | Test alert timestamp | `2026-11-16 21:40:37 IST` — temporary monitor `804695850`, event `Connection Timeout`; monitor deleted |
 | Alert confirmed by | **pending** — sent to contact `9033668`; owner must confirm receipt |
