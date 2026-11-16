@@ -1,6 +1,6 @@
 # Production environment — names, isolation and verification (D3-11)
 
-Owner: Aditya (DevOps 1). Updated: 2026-11-14.
+Owner: Aditya (DevOps 1). Updated: 2026-11-16.
 Rule: **names and paths only — this file must never contain a secret value.**
 
 Source of names: `setu-guide/docs/env-vars.md` (PR #44) plus `SENTRY_DSN` from
@@ -15,7 +15,7 @@ D2-23. Production adds no new application variables.
 | Atlas cluster | **`setu-production`** (`6af7de987eb8f34eea9760c8`) | `setu-staging` (`6af73fce61c36efa1d17a0ee`) |
 | Cluster host | `setu-production.7adxz9v.mongodb.net` | `setu-staging.ujzcbgc.mongodb.net` |
 | Tier / region | M0 Free, AWS `ap-south-1` (Mumbai), MongoDB 8.0.37 | M0 Free, same region |
-| DB user | **`setu_prod_app`** (`readWrite`, no admin role) | `setu_staging` |
+| DB user | **`setu_prod_app`** (`readWrite` on `sambandh_setu`; no admin role) | `setu_staging` |
 | Network access | `0.0.0.0/0` (**temporary**, see risk) | `0.0.0.0/0` |
 | Cloud Backup | **disabled (M0 limitation)** | disabled (M0 limitation) |
 | Node service | `sambandh-setu-api-prod` (to create) | `sambandh-setu-backend` |
@@ -26,6 +26,31 @@ Production URLs (proposed, confirm after service creation):
 
 - Node: `https://sambandh-setu-api-prod.onrender.com`
 - Guide: `https://setu-guide-prod.onrender.com`
+
+### 1.1 DB role verification (2026-11-16)
+
+Verified with `connectionStatus`: the authenticated user is `setu_prod_app` and
+its only role is `readWrite` on `sambandh_setu`. `listCollections` on
+`sambandh_setu` succeeds. The production database was empty at verification
+time.
+
+If `mongodump` fails with
+`user is not allowed to do action [listCollections] on [sambandh_setu]`, the
+role is scoped to `admin` instead of the application database. Fix it before
+deploy or backup:
+
+1. Atlas → **Setu Production** → **Security** → **Database Access**.
+2. Edit `setu_prod_app` → Built-in Role **readWrite** → Database
+   **`sambandh_setu`** → Save.
+3. Re-run the role check; do not proceed while the role is `admin`.
+
+An Atlas CLI equivalent (project owner only):
+
+```bash
+atlas dbusers update setu_prod_app \
+  --role readWrite@sambandh_setu \
+  --projectId 6af7de8d05cbff3cac56c9e5
+```
 
 ## 2. Production environment variables
 
