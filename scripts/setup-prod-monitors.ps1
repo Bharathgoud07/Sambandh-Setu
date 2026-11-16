@@ -51,7 +51,9 @@ function New-ProdMonitor([string]$Name, [string]$Url) {
         friendly_name  = $Name
         url            = $Url
         type           = 1
-        interval       = 300
+        # 30 minutes keeps production checks inside Render Free's ~750
+        # instance-hours/month; 5 minutes would keep services awake 24/7.
+        interval       = 1800
         alert_contacts = $AlertContactId
     }
     if ($result.stat -ne "ok") {
