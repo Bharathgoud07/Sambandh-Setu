@@ -68,8 +68,9 @@ repository Dockerfile hardcodes port 8000 and does not bind Render's `$PORT`).
    `pip install -r requirements.txt`.
 4. Start command:
    `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-5. Name: `setu-guide-prod`. Region: **Singapore**. Plan: **Free** plus a
-   keep-warm monitor; a paid always-on instance is not approved.
+5. Name: `setu-guide-prod`. Region: **Singapore**. Plan: **Free**. Use a
+   30-minute liveness check; cold starts are accepted and paid always-on is not
+   approved.
 6. Health check path: `/health`.
 7. Environment:
    - `PYTHON_VERSION=3.11.9`
@@ -151,7 +152,7 @@ Result: **3 passed, 5 failed, 0 skipped**.
 | Check | Result | Reason |
 |---|---|---|
 | `/health` 200 + DB ready | PASS | `{"data":{"status":"ready"}}` in 423 ms |
-| Guide first call under 5 s | PASS | 571 ms (keep-warm monitor active) |
+| Guide first call under 5 s | PASS | 571 ms while warm; after idle the free instance can take ~22 s to wake. Warm it with `GET /health` before this check. |
 | Protected routes refuse unauthenticated access | PASS | `/me`, `/connections`, `/chats` returned 401/403 |
 | Security headers | FAIL | no `x-content-type-options`; Helmet not on `dev` |
 | CORS refuses a random origin | FAIL | `Access-Control-Allow-Origin: *` |
@@ -181,8 +182,10 @@ live; the remaining failures are owner code merges, not Render configuration.
 - **Backups:** M0 has no Cloud Backup/PITR (`backupEnabled=false`). An M10+
   upgrade is paid and **not approved**; take a manual `mongodump` before launch
   and document the schedule/restore drill.
-- **Guide cold start:** free instances sleep; the 5-minute keep-warm monitor is
-  required. Paid always-on is not approved. If the 750 h/month free capacity is
-  exhausted, escalate to the lead — do not upgrade.
+- **Guide cold start:** free instances sleep. Decision 2026-11-16: staging
+  keep-warm monitors are paused; production checks run every 30 minutes; cold
+  starts and alert lag up to 30 minutes are accepted. Paid always-on is not
+  approved. If the 750 h/month free capacity is exhausted, escalate - do not
+  upgrade.
 - **Secrets:** production `JWT_SECRET`, DB password and any LLM key are new
   values; never reuse staging/dev.
