@@ -178,3 +178,9 @@ D3-14 is **NEEDS MANUAL STEP**, not DONE.
   monitor automation.
 - Free Render instances sleep; without the 5-minute monitor the Guide first
   call can exceed 5 s.
+- **Free-hour conflict:** four 5-minute keep-warm monitors (staging Node/Guide
+  and production Node/Guide) keep all four services awake. Render Free includes
+  about 750 instance-hours/month per workspace; four always-on services exceed
+  that. The lead must choose: pause staging monitors, let one production service
+  sleep (accept cold starts / `503 GUIDE_UNAVAILABLE`), or approve a paid plan
+  (not approved). Do not leave all four warm for a full month.
