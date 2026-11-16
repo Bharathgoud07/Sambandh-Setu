@@ -103,7 +103,19 @@ node scripts/check-prod-backup.js
 
 Expected today: **FAIL** because `setu-production` is M0
 (`backupEnabled=false`). M0 does not support Cloud Backup or point-in-time
-recovery.
+recovery. Actual result on 2026-11-16:
+
+```text
+cluster=setu-production tier=REPLICASET backupEnabled=false
+FAIL Cloud Backup is disabled. M0 does not support Cloud Backup/PITR.
+```
+
+On this workstation the Atlas CLI is not on `PATH`; set it for the check:
+
+```powershell
+$env:ATLAS_BIN = "C:\Users\adity\bin\atlas\atlas.exe"
+node scripts/check-prod-backup.js
+```
 
 Free-only path (approved):
 
@@ -113,6 +125,9 @@ Free-only path (approved):
      dumped.
    - Run from an allowed host (production network is currently `0.0.0.0/0`;
      restrict it after launch if a free option appears).
+   - MongoDB Database Tools 100.20.0 are installed at
+     `C:\Users\adity\bin\mongodb-database-tools\bin` and added to the user
+     `PATH` on this workstation.
    - Command template — never paste the real URI into a ticket or chat:
      ```bash
      mongodump --uri="$MONGODB_URI" --out="/backups/setu-prod-$(date +%F)" --quiet
