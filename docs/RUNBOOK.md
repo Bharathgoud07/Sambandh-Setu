@@ -8,8 +8,11 @@ Updated: 2026-11-16.
 > test is **3 passed / 5 failed**. OTP, security middleware (Helmet/CORS) and
 > Node `/guide/chat` are still not on `dev`. The production DB role was
 > corrected, a manual dump/restore drill passed, and both production monitors
-> exist (Guide liveness Up; Node `/health` Up). This runbook becomes the
-> production source of truth once the full smoke test passes.
+> exist (Guide liveness Up; Node `/health` Up). The five-minute keep-warm
+> monitors conflict with Render Free's ~750 h/month allowance; the lead must
+> choose which services may sleep. This runbook becomes the production source
+> of truth once the full smoke test passes and that free-hour decision is
+> recorded.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
 > host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
@@ -478,13 +481,13 @@ Current gaps (2026-11-16):
 | Production smoke **3 passed / 5 failed** | cannot mark D3-12 done | lead/reviewers |
 | `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit |
 | `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev` | OTP + `/guide/chat` smoke checks fail; no production login path | Sakshi |
-| CORS `*`, no Helmet, no auth rate limit | security exit criteria fail | Ankit |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
 | Frontend bundle `REPLACE-WITH-STAGING-URL`, `USE_MOCK=true` | release points at staging/mock | Karan |
 | Staging `dev-login` blocked because `NODE_ENV=production` | staging UI login path broken; production needs OTP | Sakshi/Ankit |
 | UptimeRobot API key exposed earlier | automation key must be rotated | Aditya |
-| Guide cold start: first production check returned 502, later 200 in 22.8 s | monitor timeout raised to 60 s; keep 5-min interval | Aditya/Ujala |
+| Guide cold start: first production check returned 502, later `GET /health` 200 in 22.8 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness | Aditya/Ujala |
+| Four 5-minute keep-warm monitors (staging + production) | Render Free ~750 instance-hours/month exceeded if all stay awake; services can be suspended | lead decision: pause staging / accept cold starts / paid not approved |
 
 ## 13. Troubleshooting
 
@@ -497,7 +500,7 @@ Current gaps (2026-11-16):
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
 | `mongodump` says `listCollections` denied | DB user role scope | set `readWrite` on `sambandh_setu`, not `admin`; re-run |
-| Slow first Guide call | free instance asleep | 5-min monitor; paid always-on is not approved, escalate if capacity is insufficient |
+| Slow first Guide call | free instance asleep | 5-min monitor keeps it warm but burns free hours; paid always-on is not approved. Escalate the free-hour trade-off to the lead. |
 | Port bind error on Guide | Dockerfile hardcodes 8000 | use native Python / `$PORT` |
 | Frontend hits staging | bundle string | rebuild with prod `EXPO_PUBLIC_API_URL` |
 | OTP email missing | `EMAIL_API_KEY`, provider logs | fix key; check spam; do not log OTP |
