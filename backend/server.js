@@ -32,7 +32,7 @@ app.get("/health/live", (req, res) => {
     res.json({ data: { status: "ok" } });
 });
 
-app.get("/health/ready", (req, res) => {
+const readinessHandler = (req, res) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({
             error: {
@@ -43,7 +43,12 @@ app.get("/health/ready", (req, res) => {
         });
     }
     return res.json({ data: { status: "ready" } });
-});
+};
+
+// `/health` is the single path the hosting platform probes (D2-21). It is an
+// alias of `/health/ready` so the check fails when MongoDB is unavailable.
+app.get("/health", readinessHandler);
+app.get("/health/ready", readinessHandler);
 
 app.use("/auth", authRoutes);
 app.use("/me", userRoutes);
@@ -70,7 +75,9 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-        throw new Error("JWT_SECRET must be configured with at least 32 characters");
+        const configError = new Error("JWT_SECRET must be configured with at least 32 characters");
+        configError.code = "CONFIG_INVALID_JWT_SECRET";
+        throw configError;
     }
 
     await connectDB();
@@ -86,7 +93,10 @@ const startServer = async () => {
         try {
             await mongoose.disconnect();
         } catch (disconnectError) {
-            console.error("MongoDB disconnect after startup failure failed:", disconnectError.message);
+            console.error(
+                "MongoDB disconnect after startup failure failed: name=%s",
+                disconnectError.name || "Error"
+            );
         }
         throw error;
     }
@@ -106,13 +116,13 @@ if (require.main === module) {
                 console.log(`${signal} received; shutting down`);
                 server.close(async (error) => {
                     if (error) {
-                        console.error("HTTP server shutdown failed:", error.message);
+                        console.error("HTTP server shutdown failed: name=%s", error.name || "Error");
                         process.exitCode = 1;
                     }
                     try {
                         await mongoose.disconnect();
                     } catch (disconnectError) {
-                        console.error("MongoDB shutdown failed:", disconnectError.message);
+                        console.error("MongoDB shutdown failed: name=%s", disconnectError.name || "Error");
                         process.exitCode = 1;
                     }
                 });
@@ -121,7 +131,17 @@ if (require.main === module) {
             process.on("SIGTERM", () => shutdown("SIGTERM"));
         })
         .catch((error) => {
-            console.error("Server startup failed:", error.message);
+            // Fixed text for our own config failure; type/code for everything
+            // else, because driver messages can carry connection details.
+            if (error.code === "CONFIG_INVALID_JWT_SECRET") {
+                console.error("Server startup failed: JWT_SECRET missing or shorter than 32 characters");
+            } else {
+                console.error(
+                    "Server startup failed: name=%s code=%s",
+                    error.name || "Error",
+                    error.code || "none"
+                );
+            }
             process.exitCode = 1;
         });
 }
