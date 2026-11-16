@@ -1,6 +1,6 @@
 # Production deployment — Node API + Setu Guide (D3-12)
 
-Owner: Aditya (DevOps 1). Updated: 2026-11-14.
+Owner: Aditya (DevOps 1). Updated: 2026-11-16.
 No secret values belong in this file. Env names are in
 `docs/env/production-env.md`; values live in the host environment.
 
@@ -20,18 +20,20 @@ No secret values belong in this file. Env names are in
       upgrade**.
 - [ ] Sentry DSN and Slack/Discord webhook available (D2-23 / D3-14).
 
-> Render access is required. This workstation has no Render API token, so the
-> service creation and env-var paste steps below are the only blocked part.
+> **Status 2026-11-16:** both production services exist. Guide is live. Node
+> was redeployed from `dev` after PR #3 merged; `GET /health` returned
+> `200 {"data":{"status":"ready"}}` in 0.5 s. The production smoke test is
+> **3 passed / 5 failed** because the OTP, Helmet/CORS, and `/guide/chat`
+> owner PRs are not on `dev` yet.
 
-## 1. Production URLs (proposed)
+## 1. Production URLs (live)
 
 | Service | URL |
 |---|---|
 | Node API | `https://sambandh-setu-api-prod.onrender.com` |
 | Setu Guide | `https://setu-guide-prod.onrender.com` |
 
-Create the services with these names so the URLs match. Tell Ankit and Pooja
-as soon as both respond.
+Tell Ankit and Pooja as soon as the remaining smoke checks are green.
 
 ## 2. Node API — Render Web Service
 
@@ -133,16 +135,32 @@ $env:SMOKE_TOKEN = (Get-Content "C:\Users\adity\.setu-secrets\prod\smoke-token.t
 `--allow-skips` is for local dry runs only; a production run with skips is a
 failure.
 
-### Current expected failures (until owner PRs merge)
+### Current production smoke result (2026-11-16)
 
-Against staging today the smoke test correctly reports:
+Command:
 
-- security headers missing (Ankit: Helmet);
-- CORS `*` (Ankit: allow-list);
-- OTP + rate limit 404 (`/auth/otp/request` not merged yet);
-- `/guide/chat` skipped/failed (Sakshi: route not implemented).
+```bash
+node scripts/smoke-test.js \
+  --base-url https://sambandh-setu-api-prod.onrender.com \
+  --guide-url https://setu-guide-prod.onrender.com \
+  --timeout-ms 60000
+```
 
-Do not mark D3-12 done until all eight checks pass.
+Result: **3 passed, 5 failed, 0 skipped**.
+
+| Check | Result | Reason |
+|---|---|---|
+| `/health` 200 + DB ready | PASS | `{"data":{"status":"ready"}}` in 423 ms |
+| Guide first call under 5 s | PASS | 571 ms (keep-warm monitor active) |
+| Protected routes refuse unauthenticated access | PASS | `/me`, `/connections`, `/chats` returned 401/403 |
+| Security headers | FAIL | no `x-content-type-options`; Helmet not on `dev` |
+| CORS refuses a random origin | FAIL | `Access-Control-Allow-Origin: *` |
+| Auth rate limit returns 429 | FAIL | `/auth/otp/request` returned 404 |
+| OTP request responds | FAIL | `/auth/otp/request` returned 404 (`NOT_FOUND`) |
+| Node `/guide/chat` reply/fallback | FAIL | route not on `dev`; `SMOKE_TOKEN` also required |
+
+Do not mark D3-12 done until all eight checks pass. The Node deploy itself is
+live; the remaining failures are owner code merges, not Render configuration.
 
 ## 6. Rollback
 
