@@ -152,9 +152,10 @@ Vercel bundle still contains `https://REPLACE-WITH-STAGING-URL` and
 - [ ] PRs for the release are merged into `dev`; CI is green.
 - [ ] `node --test` passes in `backend`; guide tests pass.
 - [ ] Production env values exist outside git and pass the isolation check.
-- [ ] Atlas production cluster is up; DB user and network access work.
-- [ ] A recent production manual dump exists (M0) or Cloud Backup is enabled.
-- [ ] UptimeRobot monitors are ready to be created.
+- [x] Atlas production cluster is up; DB user and network access work
+      (verified 2026-11-16).
+- [x] Manual production dump/restore drill passed (M0; synthetic data only).
+- [x] UptimeRobot production monitors are created (staging monitors paused).
 - [ ] Release owner/lead is available for rollback decisions.
 
 ### 4.2 Node API (Render, Docker)
