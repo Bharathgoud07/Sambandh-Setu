@@ -8,11 +8,11 @@ Updated: 2026-11-16.
 > test is **3 passed / 5 failed**. OTP, security middleware (Helmet/CORS) and
 > Node `/guide/chat` are still not on `dev`. The production DB role was
 > corrected, a manual dump/restore drill passed, and both production monitors
-> exist (Guide liveness Up; Node `/health` Up). The five-minute keep-warm
-> monitors conflict with Render Free's ~750 h/month allowance; the lead must
-> choose which services may sleep. This runbook becomes the production source
-> of truth once the full smoke test passes and that free-hour decision is
-> recorded.
+> exist (Guide liveness Up; Node `/health` Up). Free-hour decision (2026-11-16):
+> staging keep-warm monitors are paused; production checks run every 30 minutes;
+> cold starts and alert delays up to 30 minutes are accepted. No paid plan was
+> purchased. This runbook becomes the production source of truth once the full
+> smoke test passes.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
 > host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
@@ -40,7 +40,7 @@ Companion documents (merge with the D3 PRs):
 | Setu Guide | FastAPI | `ujala100/setu-guide` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` | Ujala |
 | Primary DB | MongoDB Atlas | — | `setu-staging`, M0 | `setu-production`, M0 | Aditya |
 | Web/waitlist | static/Vercel | — | pending | pending | Pooja |
-| Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` | Guide liveness `804695804` (`/openapi.json`, Up); Node `804695322` (`/health`, Up) | Aditya |
+| Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` (paused 2026-11-16) | Guide liveness `804695804` (`/openapi.json`, 30-min); Node `804695322` (`/health`, 30-min) | Aditya |
 | Errors | Sentry (optional) | — | pending DSN | pending DSN | Ankit |
 
 Request path:
@@ -181,8 +181,8 @@ Full step-by-step: `docs/deploy-production.md`.
 2. Branch `dev`; runtime **Python**.
 3. Build `pip install -r requirements.txt`.
 4. Start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-5. Name `setu-guide-prod`; region Singapore; plan **Free** plus keep-warm
-   monitor (paid always-on is not approved).
+5. Name `setu-guide-prod`; region Singapore; plan **Free**. Use a 30-minute
+   liveness check; cold starts are accepted and paid always-on is not approved.
 6. Health check `/health`.
 7. Env: `USE_MOCK=true`, `LLM_PROVIDER=placeholder`, limits/cache/log values
    from section 3.
@@ -258,7 +258,7 @@ same minute (section 8).
 |---|---|---|
 | Node runtime logs | Render → service → **Logs** | request/error logs; no tokens, OTPs, messages or DB URI |
 | Guide runtime logs | Render → service → **Logs** | provider failures logged without message/topic/ids/key |
-| UptimeRobot | dashboard | Node `/health`; Guide `/openapi.json` (HEAD-safe free-plan check); 5-minute interval, alert contact `9033668` |
+| UptimeRobot | dashboard | Node `/health`; Guide `/openapi.json` (HEAD-safe free-plan check); 30-minute interval, alert contact `9033668`; staging monitors paused |
 | Sentry (optional) | Sentry project | 5xx only, PII-free events; no-op without `SENTRY_DSN` |
 | Atlas | Atlas → project → cluster | connections, CPU, disk, slow queries, backup state |
 | Deploy history | Render → Deploys | who/when/commit; rollback source |
@@ -487,7 +487,7 @@ Current gaps (2026-11-16):
 | Staging `dev-login` blocked because `NODE_ENV=production` | staging UI login path broken; production needs OTP | Sakshi/Ankit |
 | UptimeRobot API key exposed earlier | automation key must be rotated | Aditya |
 | Guide cold start: first production check returned 502, later `GET /health` 200 in 22.8 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness | Aditya/Ujala |
-| Four 5-minute keep-warm monitors (staging + production) | Render Free ~750 instance-hours/month exceeded if all stay awake; services can be suspended | lead decision: pause staging / accept cold starts / paid not approved |
+| Free-hour decision (2026-11-16): staging keep-warm paused; production checks 30 min | cold starts and alert lag up to 30 min; no paid plan | Aditya |
 
 ## 13. Troubleshooting
 
@@ -495,12 +495,12 @@ Current gaps (2026-11-16):
 |---|---|---|
 | `/health` 503 | Render logs; Atlas access list; `MONGODB_URI` | fix DB user/network/URI; redeploy |
 | `/health` 404 | wrong service/branch; health path | deploy `dev` with `/health` alias; set health path |
-| Guide 502/504 | Guide `/health`, Render logs, cold start | wait/keep-warm; `USE_MOCK=true` fallback |
+| Guide 502/504 | Guide `/health`, Render logs, cold start | wait for the free instance to wake; `USE_MOCK=true` fallback |
 | CORS error in browser | response `Access-Control-Allow-Origin` | fix `CORS_ORIGINS` allow-list; no `*` in prod |
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
 | `mongodump` says `listCollections` denied | DB user role scope | set `readWrite` on `sambandh_setu`, not `admin`; re-run |
-| Slow first Guide call | free instance asleep | 5-min monitor keeps it warm but burns free hours; paid always-on is not approved. Escalate the free-hour trade-off to the lead. |
+| Slow first Guide call | free instance asleep | expected with the 30-minute check; retry after the instance wakes. Paid always-on is not approved. |
 | Port bind error on Guide | Dockerfile hardcodes 8000 | use native Python / `$PORT` |
 | Frontend hits staging | bundle string | rebuild with prod `EXPO_PUBLIC_API_URL` |
 | OTP email missing | `EMAIL_API_KEY`, provider logs | fix key; check spam; do not log OTP |
