@@ -1,6 +1,6 @@
 # Production alerts + backups (D3-14)
 
-Owner: Aditya (DevOps 1). Updated: 2026-11-14.
+Owner: Aditya (DevOps 1). Updated: 2026-11-16.
 No secret values in this file.
 
 > **Free-only policy:** no paid plan, paid add-on, paid static IP or paid
@@ -29,6 +29,18 @@ Dashboard (exact steps):
 6. Create. Repeat for `Setu PROD - Guide /health` with
    `https://setu-guide-prod.onrender.com/health`.
 7. Confirm both show **Up** within 5 minutes.
+
+Created 2026-11-16 with the API script:
+
+| Service | Monitor ID | State |
+|---|---|---|
+| Guide `/health` | `804695321` | live check; 60 s timeout because the first Render cold start can exceed 30 s |
+| Node `/health` | `804695322` | **paused** until D3-12 deploys; unpause after `/health` returns 200 |
+
+The Guide monitor's first check returned `Bad Gateway` during the Render cold
+start. A later manual check returned `200 {"status":"ok"}` in 22.8 s. Keep the
+60 s timeout and 5-minute interval; do not mark the monitor healthy until the
+dashboard shows **Up**.
 
 Script alternative (reads the API key from a local file; prints IDs only):
 
@@ -84,6 +96,9 @@ recovery.
 Free-only path (approved):
 
 1. **Manual `mongodump` + restore drill (M0):**
+   - Verify `setu_prod_app` has `readWrite` on `sambandh_setu`, not `admin`.
+     A role scoped to `admin` fails with `listCollections` before any data is
+     dumped.
    - Run from an allowed host (production network is currently `0.0.0.0/0`;
      restrict it after launch if a free option appears).
    - Command template — never paste the real URI into a ticket or chat:
@@ -104,13 +119,28 @@ enable **Cloud Backup** → apply. Only after approval, re-run
 
 | Item | Value |
 |---|---|
-| Node monitor ID | |
-| Guide monitor ID | |
-| Test alert timestamp | |
-| Alert confirmed by | |
+| Node monitor ID | `804695322` (paused until D3-12 deploy) |
+| Guide monitor ID | `804695321` |
+| Test alert timestamp | **pending** — manual contact `9033668` test not yet confirmed |
+| Alert confirmed by | **pending** |
 | Atlas backup mode | M0 manual dump (free-only) |
-| Snapshot ID / dump path | |
-| Restore drill result | |
+| Snapshot ID / dump path | `C:\Users\adity\AppData\Local\Temp\opencode\prod-dump-2026-11-16` (synthetic drill; 1 document) |
+| Restore drill result | **PASS** — 1 collection, 1/1 documents; local temp DB dropped; synthetic production collection dropped; production DB returned to 0 collections |
+
+Drill log (2026-11-16):
+
+1. Corrected `setu_prod_app` from `readWrite` on `admin` to `readWrite` on
+   `sambandh_setu`; verified `listCollections` succeeds.
+2. Seeded one synthetic document in `ops_backup_drill`, ran `mongodump`, and
+   restored it into a local `mongo:7` container as
+   `sambandh_setu_restore_diag`.
+3. Source and restore both reported 1 collection / 1 document
+   (`ALL_MATCH=true`).
+4. Dropped the local temp DB and the synthetic production collection; production
+   has 0 collections again.
+
+**Remaining manual evidence:** a human must confirm the UptimeRobot test alert
+arrived at contact `9033668`.
 
 ## 5. Risks
 
