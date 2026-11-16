@@ -30,7 +30,7 @@ app.get("/health/live", (req, res) => {
     res.json({ data: { status: "ok" } });
 });
 
-app.get("/health/ready", (req, res) => {
+const readinessHandler = (req, res) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({
             error: {
@@ -41,7 +41,12 @@ app.get("/health/ready", (req, res) => {
         });
     }
     return res.json({ data: { status: "ready" } });
-});
+};
+
+// `/health` is the single path the hosting platform probes (D2-21). It is an
+// alias of `/health/ready` so the check fails when MongoDB is unavailable.
+app.get("/health", readinessHandler);
+app.get("/health/ready", readinessHandler);
 
 app.use("/auth", authRoutes);
 app.use("/me", userRoutes);
