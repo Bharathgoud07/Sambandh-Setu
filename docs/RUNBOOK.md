@@ -14,6 +14,13 @@ Updated: 2026-11-16.
 > purchased. This runbook becomes the production source of truth once the full
 > smoke test passes.
 >
+> **Product decision (2026-11-16 meeting):** SETU launches as a bottom tab/page
+> inside Sambandh (one page), target **20 Nov 2026**; community/astrology/services
+> stay under Sambandh for now. Do not force a second login. The current OTP demo
+> shows the code on screen and does not deliver OTP; this must be fixed before
+> live. Ankit's laptop is unavailable until 20 Nov (back 21 Nov), so Helmet/CORS/
+> rate-limit work is at risk for the deadline. Source: Read.ai transcript.
+>
 > **No secret values belong in this file.** Env names only. Values live in the
 > host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
 >
@@ -480,8 +487,8 @@ Current gaps (2026-11-16):
 | Gap | Impact | Owner |
 |---|---|---|
 | Production smoke **3 passed / 5 failed** | cannot mark D3-12 done | lead/reviewers |
-| `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit |
-| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev` | OTP + `/guide/chat` smoke checks fail; no production login path | Sakshi |
+| `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit (laptop unavailable until 20 Nov; back 21 Nov) |
+| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
 | Frontend bundle `REPLACE-WITH-STAGING-URL`, `USE_MOCK=true` | release points at staging/mock | Karan |
