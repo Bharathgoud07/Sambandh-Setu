@@ -139,7 +139,7 @@ Against staging today the smoke test correctly reports:
 
 - security headers missing (Ankit: Helmet);
 - CORS `*` (Ankit: allow-list);
-- OTP + rate limit 404 (`/auth/send-otp` not implemented);
+- OTP + rate limit 404 (`/auth/otp/request` not merged yet);
 - `/guide/chat` skipped/failed (Sakshi: route not implemented).
 
 Do not mark D3-12 done until all eight checks pass.

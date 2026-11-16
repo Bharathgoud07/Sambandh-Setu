@@ -14,8 +14,8 @@ const DEFAULTS = {
     maxGuideSeconds: 5,
     rateLimitAttempts: 25,
     rateLimitIntervalMs: 50,
-    otpPath: "/auth/send-otp",
-    rateLimitPath: "/auth/send-otp",
+    otpPath: "/auth/otp/request",
+    rateLimitPath: "/auth/otp/request",
     guideChatPath: "/guide/chat",
     protectedPaths: ["/me", "/connections", "/chats"],
 };
