@@ -13,6 +13,7 @@ const connectionRoutes = require("./routes/connectionRoutes");
 const homeRoutes = require("./routes/homeRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const guideRoutes = require("./routes/guideRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorMiddleware");
 const {
     globalLimiter,
@@ -28,6 +29,7 @@ dotenv.config();
 initSentry();
 
 const app = express();
+app.set("trust proxy", 1);
 
 applyTrustProxy(app);
 
@@ -73,6 +75,7 @@ app.use("/connections", connectionRoutes);
 app.use("/home", homeRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/chats", chatRoutes);
+app.use("/guide", guideRoutes);
 
 app.use(notFoundHandler);
 
