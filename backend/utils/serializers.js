@@ -29,6 +29,7 @@ const serializeProfile = (profile, user = profile?.user) => {
         education: value.education,
         profession: value.profession,
         interests: value.interests,
+        languages: value.languages || [],
         lifestyle: value.lifestyle,
         family: value.family,
         preferences: value.preferences,

@@ -1,4 +1,5 @@
 const Profile = require("../models/Profile");
+const { APPROVED_LANGUAGES } = require("../constants/languages");
 const ApiError = require("../utils/ApiError");
 const { serializeProfile } = require("../utils/serializers");
 
@@ -12,6 +13,7 @@ const PROFILE_FIELDS = new Set([
     "education",
     "profession",
     "interests",
+    "languages",
     "lifestyle",
     "family"
 ]);
@@ -49,6 +51,46 @@ const validateStringList = (value, field, { maxItems = 30, maxLength = 80 } = {}
     return value.map((item, index) => validateText(item, `${field}.${index}`, maxLength, {
         allowEmpty: false
     }));
+};
+
+
+const validateLanguages = (value, field = "languages") => {
+    if (!Array.isArray(value)) {
+        throw ApiError.badRequest(
+            `${field} must be an array of languages`,
+            [{ field }]
+        );
+    }
+
+    const normalizedLanguages = value.map((item, index) => {
+        const language = validateText(item, `${field}.${index}`, 40, {
+            allowEmpty: false
+        });
+
+        const approvedLanguage = APPROVED_LANGUAGES.find(
+            (approved) => approved.toLowerCase() === language.toLowerCase()
+        );
+
+        if (!approvedLanguage) {
+            throw ApiError.badRequest(
+                `${field}.${index} must be an approved language`,
+                [{ field: `${field}.${index}` }]
+            );
+        }
+
+        return approvedLanguage;
+    });
+
+    const uniqueLanguages = [...new Set(normalizedLanguages)];
+
+    if (uniqueLanguages.length < 1 || uniqueLanguages.length > 5) {
+        throw ApiError.badRequest(
+            `${field} must contain between 1 and 5 unique languages`,
+            [{ field }]
+        );
+    }
+
+    return uniqueLanguages;
 };
 
 const validateNestedProfile = (value, field, allowedFields) => {
@@ -117,6 +159,9 @@ const validateProfilePatch = (body) => {
                 break;
             case "interests":
                 result[field] = validateStringList(value, field);
+                break;
+            case "languages":
+                result[field] = validateLanguages(value, field);
                 break;
             case "lifestyle":
                 result[field] = validateNestedProfile(value, field, new Set(["routine", "interests"]));

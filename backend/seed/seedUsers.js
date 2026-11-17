@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const crypto = require("node:crypto");
@@ -18,6 +19,7 @@ const fictionalUsers = [
         education: "Master's in Design",
         profession: "Product Designer",
         interests: ["Reading", "Art", "Travel"],
+        languages: ["English", "Hindi", "Marathi"],
         lifestyle: { routine: "A balanced weekday routine with time for friends and fitness.", interests: ["Walking", "Cooking"] },
         family: { background: "Close-knit family that values kindness and learning.", involvement: "Family is an important part of major decisions." }
     },
@@ -31,6 +33,7 @@ const fictionalUsers = [
         education: "Bachelor's in Engineering",
         profession: "Software Engineer",
         interests: ["Hiking", "Music", "Cooking"],
+        languages: ["English", "Hindi", "Punjabi"],
         lifestyle: { routine: "Active mornings and relaxed weekends.", interests: ["Cycling", "Live music"] },
         family: { background: "Supportive family with a warm, practical outlook.", involvement: "Enjoys spending time with family." }
     },
@@ -44,6 +47,7 @@ const fictionalUsers = [
         education: "Master's in Business",
         profession: "Business Analyst",
         interests: ["Coffee", "Photography", "Cricket"],
+        languages: ["English", "Tamil", "Telugu"],
         lifestyle: { routine: "Mostly regular weekdays and social weekends.", interests: ["Photography", "Sports"] },
         family: { background: "Friendly family that enjoys shared meals.", involvement: "Values mutual respect and independence." }
     },
@@ -57,6 +61,7 @@ const fictionalUsers = [
         education: "Bachelor's in Architecture",
         profession: "Architect",
         interests: ["Architecture", "Travel", "Gardening"],
+        languages: ["English", "Hindi", "Gujarati"],
         lifestyle: { routine: "A creative workday with outdoor time when possible.", interests: ["Gardening", "Walking"] },
         family: { background: "A close family with a mix of traditions and modern ideas.", involvement: "Family conversations are valued." }
     },
@@ -70,6 +75,7 @@ const fictionalUsers = [
         education: "Bachelor's in Finance",
         profession: "Financial Analyst",
         interests: ["Cooking", "Films", "Running"],
+        languages: ["English", "Hindi"],
         lifestyle: { routine: "Likes a steady routine and an active start to the day.", interests: ["Running", "Movies"] },
         family: { background: "Supportive family with a strong sense of togetherness.", involvement: "Keeps family connected through regular visits." }
     },
@@ -83,6 +89,7 @@ const fictionalUsers = [
         education: "Master's in History",
         profession: "Researcher",
         interests: ["History", "Museums", "Board games"],
+        languages: ["English", "Bengali", "Hindi"],
         lifestyle: { routine: "Quiet weekdays balanced by cultural outings.", interests: ["Museums", "Board games"] },
         family: { background: "A kind family that encourages curiosity.", involvement: "Makes time for family gatherings." }
     },
@@ -96,6 +103,7 @@ const fictionalUsers = [
         education: "Bachelor's in Communications",
         profession: "Marketing Strategist",
         interests: ["Writing", "Food", "Travel"],
+        languages: ["English", "Hindi", "Odia"],
         lifestyle: { routine: "Flexible schedule with time for creative projects.", interests: ["Writing", "Trying new food"] },
         family: { background: "A welcoming family that enjoys celebrating together.", involvement: "Family input is appreciated." }
     },
@@ -110,6 +118,7 @@ const fictionalUsers = [
         education: "Master's in Computer Science",
         profession: "Data Scientist",
         interests: ["Music", "Road trips", "Fitness"],
+        languages: ["English", "Telugu", "Hindi"],
         lifestyle: { routine: "Structured workdays and spontaneous weekend plans.", interests: ["Fitness", "Music"] },
         family: { background: "A close and encouraging family.", involvement: "Enjoys staying involved in family life." }
     },
@@ -123,6 +132,7 @@ const fictionalUsers = [
         education: "Bachelor's in Environmental Science",
         profession: "Environmental Consultant",
         interests: ["Nature", "Reading", "Volunteering"],
+        languages: ["English", "Malayalam"],
         lifestyle: { routine: "Enjoys time outdoors and community activities.", interests: ["Hiking", "Volunteering"] },
         family: { background: "A supportive family that values compassion.", involvement: "Family relationships are a priority." }
     }
@@ -133,6 +143,7 @@ const seedUsers = async () => {
 
     for (const fixture of fictionalUsers) {
         let user = await User.findOne({ username: fixture.username }).select("+passwordHash +isSeeded");
+
         if (!user) {
             user = new User({
                 username: fixture.username,
@@ -141,15 +152,18 @@ const seedUsers = async () => {
                 lastName: fixture.lastName,
                 isSeeded: true
             });
+
             await user.setPassword(crypto.randomBytes(32).toString("hex"));
         } else {
             user.firstName = fixture.firstName;
             user.lastName = fixture.lastName;
             user.isSeeded = true;
         }
+
         await user.save();
 
         const { username, firstName, lastName, ...profile } = fixture;
+
         await Profile.findOneAndUpdate(
             { user: user._id },
             { $set: { user: user._id, ...profile } },
@@ -158,6 +172,7 @@ const seedUsers = async () => {
     }
 
     await seedB2();
+
     console.log(`Seeded ${fictionalUsers.length} fictional Sambandh Setu users and profiles.`);
 };
 
