@@ -14,6 +14,12 @@ const homeRoutes = require("./routes/homeRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorMiddleware");
+const {
+    globalLimiter,
+    authIpLimiter,
+    authEmailLimiter,
+    applyTrustProxy
+} = require("./middleware/rateLimit");
 const { initSentry, captureException } = require("./config/sentry");
 const ApiError = require("./utils/ApiError");
 const mongoose = require("mongoose");
@@ -23,11 +29,14 @@ initSentry();
 
 const app = express();
 
+applyTrustProxy(app);
+
 // Security headers run first. The API is consumed cross-origin by the web app,
 // so CORP is set to cross-origin while the rest of Helmet's defaults stay on.
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "100kb" }));
+app.use(globalLimiter);
 
 app.get("/", (req, res) => {
     res.json({ message: "Sambandh Setu Backend is running!" });
@@ -55,7 +64,7 @@ const readinessHandler = (req, res) => {
 app.get("/health", readinessHandler);
 app.get("/health/ready", readinessHandler);
 
-app.use("/auth", authRoutes);
+app.use("/auth", authIpLimiter, authEmailLimiter, authRoutes);
 app.use("/me", userRoutes);
 app.use("/profiles", profileRoutes);
 app.use("/discover", discoverRoutes);
