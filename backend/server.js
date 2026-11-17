@@ -11,6 +11,7 @@ const connectionRoutes = require("./routes/connectionRoutes");
 const homeRoutes = require("./routes/homeRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const guideRoutes = require("./routes/guideRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorMiddleware");
 const ApiError = require("./utils/ApiError");
 const mongoose = require("mongoose");
@@ -18,6 +19,7 @@ const mongoose = require("mongoose");
 dotenv.config();
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(cors());
 app.use(express.json({ limit: "100kb" }));
@@ -52,6 +54,7 @@ app.use("/connections", connectionRoutes);
 app.use("/home", homeRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/chats", chatRoutes);
+app.use("/guide", guideRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
