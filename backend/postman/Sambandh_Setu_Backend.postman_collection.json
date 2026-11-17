@@ -1,0 +1,911 @@
+﻿{
+  "info": {
+    "_postman_id": "94bb11ab-3f12-4aa3-8a0a-3ca1637b1d81",
+    "name": "Sambandh Setu Backend",
+    "description": "Collection for the implemented, documented APIs in backend/API.md. Start the backend with NODE_ENV=development for dev login. Login requests populate the request sender/recipient role variables with Aanya and Rohan by default. For another pair, set requestSenderToken/requestSenderId and requestRecipientToken/requestRecipientId from two dev-login responses. Requests are not run automatically. GET / is implemented but undocumented, and POST /guide/chat is not implemented; neither is included.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication & Profiles",
+      "item": [
+        {
+          "name": "Dev login - Aanya",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"username\":\"aanya\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/dev-login",
+            "description": "Development only. No bearer authentication."
+          }
+        },
+        {
+          "name": "Dev login - Rohan",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"username\":\"rohan\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/dev-login",
+            "description": "Development only. No bearer authentication."
+          }
+        },
+        {
+          "name": "Dev login - Karthik",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"username\":\"karthik\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/dev-login",
+            "description": "Development only. No bearer authentication."
+          }
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/me"
+          }
+        },
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/me/profile"
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"bio\":\"I enjoy thoughtful conversations.\",\"interests\":[\"Reading\",\"Walking\"]}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/me/profile",
+            "description": "Example editable profile fields from API.md. Set updateMyProfile=true for one manually chosen profile update."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('updateMyProfile') === 'true';",
+                  "pm.collectionVariables.set('updateMyProfile', 'false');",
+                  "if (!enabled) {",
+                  "  console.warn('Skipped profile update: set updateMyProfile=true to opt in to this write once.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get profile by user ID",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/profiles/{{rohanUserId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (!pm.collectionVariables.get('rohanUserId')) {",
+                  "  console.warn('Skipped profile lookup: run Dev login - Rohan first.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Connections & Requests",
+      "item": [
+        {
+          "name": "Discover profiles",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/discover?query=&filters="
+          }
+        },
+        {
+          "name": "List requests",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/requests?box={{requestBox}}",
+            "description": "Recovery/setup: with requestBox=sent, captures an existing pending request ID for the configured sender/recipient pair. This is the safe recovery path after a 409."
+          }
+        },
+        {
+          "name": "List requests - invalid box (400)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/requests?box=invalid",
+            "description": "Negative validation case; this request does not change data."
+          }
+        },
+        {
+          "name": "List active connections",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections?status=active",
+            "description": "Run this read-only preflight before Send connection request. Captures an existing active connection ID for the configured sender/recipient pair."
+          }
+        },
+        {
+          "name": "Send connection request",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"recipientId\":\"{{requestRecipientId}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/requests",
+            "description": "Creates a pending request and notification. Requires createRequest=true (one-use opt-in). Before enabling it, use List requests and List active connections to confirm this pair has neither a pending request nor an active connection. A 409 is an error, not a created request; use the list requests to recover a pending request ID."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('createRequest') === 'true';",
+                  "const configured = ['requestSenderToken', 'requestSenderId', 'requestRecipientToken', 'requestRecipientId'].every(function (key) { return Boolean(pm.collectionVariables.get(key)); });",
+                  "const pairExists = Boolean(pm.collectionVariables.get('ssRequestId') || pm.collectionVariables.get('ssActiveConnectionId'));",
+                  "pm.collectionVariables.set('createRequest', 'false');",
+                  "if (!enabled || !configured || pairExists) {",
+                  "  console.warn(pairExists ? 'Skipped request creation: preflight found a pending request or active connection. Use the existing ID instead.' : 'Skipped request creation: configure both users, run List requests and List active connections, then set createRequest=true for one request.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept connection request",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestRecipientToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/requests/{{ssRequestId}}/accept",
+            "description": "Accepts a pending request addressed to the configured recipient. Set requestAction=accept to opt in. On success, captures data.connection.id and consumes the pending request ID."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.collectionVariables.get('requestAction') !== 'accept' || !pm.collectionVariables.get('ssRequestId')) {",
+                  "  console.warn('Skipped accept: set requestAction=accept and first capture a pending request ID with List requests or Send connection request.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Decline connection request",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestRecipientToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/requests/{{ssRequestId}}/decline",
+            "description": "Alternative to accept: set requestAction=decline and run only this outcome for a pending request addressed to the configured recipient. Do not run after accepting."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.collectionVariables.get('requestAction') !== 'decline' || !pm.collectionVariables.get('ssRequestId')) {",
+                  "  console.warn('Skipped decline: set requestAction=decline and first capture a pending request ID.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw connection request",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/requests/{{ssRequestId}}",
+            "description": "Alternative to accept or decline: set requestAction=withdraw and run only this outcome for a pending request sent by the configured sender. Do not run after another action."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.collectionVariables.get('requestAction') !== 'withdraw' || !pm.collectionVariables.get('ssRequestId')) {",
+                  "  console.warn('Skipped withdraw: set requestAction=withdraw and first capture a pending request ID.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get connection",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (!pm.collectionVariables.get('ssActiveConnectionId')) {",
+                  "  console.warn('Skipped Get connection: run List active connections or successfully accept a request first.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get home",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/home"
+          }
+        },
+        {
+          "name": "List notifications",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/notifications"
+          }
+        },
+        {
+          "name": "Mark notification as read",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/notifications/{{notificationId}}/read"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.collectionVariables.get('enableNotificationRead') !== 'true' || !pm.collectionVariables.get('notificationId')) {",
+                  "  console.warn('Skipped notification update: set enableNotificationRead=true and run List notifications to capture an unread notification.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "pm.collectionVariables.set('enableNotificationRead', 'false');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Journey & Reflection",
+      "item": [
+        {
+          "name": "Get connection journey",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/journey"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (!pm.collectionVariables.get('ssActiveConnectionId')) {",
+                  "  console.warn('Skipped journey lookup: run List active connections or accept a pending request first.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get stage content",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/stages/{{journeyStage}}",
+            "description": "journeyStage must be one of connect, understand, reflect, discuss, agree, family, reflect_again, decision, and the stage must be unlocked."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (!pm.collectionVariables.get('ssActiveConnectionId')) {",
+                  "  console.warn('Skipped stage content: no active connection ID.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete active stage",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/stages/{{journeyStage}}/complete",
+            "description": "Advances the journey and changes data. Set completeActiveStage=true for one manually chosen active stage only. Reflect requires all 10 answers."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('completeActiveStage') === 'true';",
+                  "pm.collectionVariables.set('completeActiveStage', 'false');",
+                  "if (!enabled || !pm.collectionVariables.get('ssActiveConnectionId') || !pm.collectionVariables.get('journeyStage') || pm.collectionVariables.get('journeyCompleted') === 'true') {",
+                  "  console.warn('Skipped stage completion: set completeActiveStage=true once after confirming the current active stage and any required reflection answers.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get reflection questions",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/reflect/questions",
+            "description": "Reflect must be unlocked. The response test stores the first question ID."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const order = ['connect', 'understand', 'reflect', 'discuss', 'agree', 'family', 'reflect_again', 'decision', 'complete'];",
+                  "const stage = pm.collectionVariables.get('journeyStage');",
+                  "if (!pm.collectionVariables.get('ssActiveConnectionId') || !stage || order.indexOf(stage) < order.indexOf('reflect')) {",
+                  "  console.warn('Skipped reflection questions: an active connection with Reflect unlocked is required.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save reflection answer",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"value\":\"kindness\",\"sharing\":\"keep_private\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/reflect/answers/{{questionId}}",
+            "description": "Example is valid for the seeded first single-select question. Set saveReflectionAnswer=true for a one-use write after Reflect is unlocked."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('saveReflectionAnswer') === 'true';",
+                  "pm.collectionVariables.set('saveReflectionAnswer', 'false');",
+                  "const order = ['connect', 'understand', 'reflect', 'discuss', 'agree', 'family', 'reflect_again', 'decision', 'complete'];",
+                  "const stage = pm.collectionVariables.get('journeyStage');",
+                  "if (!enabled || !pm.collectionVariables.get('ssActiveConnectionId') || !pm.collectionVariables.get('questionId') || !stage || order.indexOf(stage) < order.indexOf('reflect')) {",
+                  "  console.warn('Skipped reflection answer write: explicitly opt in once after Reflect is unlocked and a question ID is captured.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get reflection progress",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/connections/{{ssActiveConnectionId}}/reflect/progress"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const order = ['connect', 'understand', 'reflect', 'discuss', 'agree', 'family', 'reflect_again', 'decision', 'complete'];",
+                  "const stage = pm.collectionVariables.get('journeyStage');",
+                  "if (!pm.collectionVariables.get('ssActiveConnectionId') || !stage || order.indexOf(stage) < order.indexOf('reflect')) {",
+                  "  console.warn('Skipped reflection progress: an active connection with Reflect unlocked is required.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat & Messaging",
+      "item": [
+        {
+          "name": "List chats",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/chats?filter={{chatFilter}}",
+            "description": "Set chatFilter to all, active, new, or muted. Listing chats may lazily create chat records for active connections."
+          }
+        },
+        {
+          "name": "List chats - invalid filter (400)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/chats?filter=invalid",
+            "description": "Negative validation case."
+          }
+        },
+        {
+          "name": "List messages",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/chats/{{chatId}}/messages?cursor={{messageCursor}}",
+            "description": "First invocation omits cursor and fetches newest messages; subsequent invocations use the captured nextCursor. Set messagePageStarted=false to restart from newest."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (!pm.collectionVariables.get('chatId')) {",
+                  "  console.warn('Skipped message history: run List chats and ensure a chat exists.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "if (pm.collectionVariables.get('messagePageStarted') === 'true' && pm.collectionVariables.get('messageHasMore') !== 'true') {",
+                  "  console.warn('Skipped message history: no older page remains; reset messagePageStarted=false to fetch newest again.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "if (!pm.collectionVariables.get('messageCursor')) pm.request.url.query.remove('cursor');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send message",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"text\":\"Hello, it is nice to connect.\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/chats/{{chatId}}/messages",
+            "description": "Sends a message and changes data. Set sendMessage=true for one manually chosen send."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('sendMessage') === 'true';",
+                  "pm.collectionVariables.set('sendMessage', 'false');",
+                  "if (!enabled || !pm.collectionVariables.get('chatId')) {",
+                  "  console.warn('Skipped message send: set sendMessage=true once and run List chats to capture a valid chat ID.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark received messages as read",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/chats/{{chatId}}/read",
+            "description": "Updates read status for messages in this chat. Set markMessagesRead=true for one manually chosen read update."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('markMessagesRead') === 'true';",
+                  "pm.collectionVariables.set('markMessagesRead', 'false');",
+                  "if (!enabled || !pm.collectionVariables.get('chatId')) {",
+                  "  console.warn('Skipped read-status update: set markMessagesRead=true once and ensure a chat ID is captured.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set chat mute preference",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{requestSenderToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"muted\":true}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/chats/{{chatId}}/mute",
+            "description": "Changes this user's chat preference. Set setChatMuted=true for one manually chosen mute update."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('setChatMuted') === 'true';",
+                  "pm.collectionVariables.set('setChatMuted', 'false');",
+                  "if (!enabled || !pm.collectionVariables.get('chatId')) {",
+                  "  console.warn('Skipped mute preference update: set setChatMuted=true once and ensure a chat ID is captured.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Preferences",
+      "item": [
+        {
+          "name": "Get preference section",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "url": "{{baseUrl}}/me/preferences/{{preferenceSection}}",
+            "description": "preferenceSection must be basic, lifestyle, family, valuesOutlook, or additional."
+          }
+        },
+        {
+          "name": "Update preference section",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"conversationPace\":\"gradual\",\"sharedValues\":[\"kindness\",\"curiosity\"]}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/me/preferences/{{preferenceSection}}",
+            "description": "Merges the supplied JSON object into the selected supported section. Set updatePreferences=true for one manually chosen write."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('updatePreferences') === 'true';",
+                  "pm.collectionVariables.set('updatePreferences', 'false');",
+                  "if (!enabled) {",
+                  "  console.warn('Skipped preferences update: set updatePreferences=true to opt in to this write once.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update sharing default",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{aanyaToken}}", "type": "string" }] },
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\"sharing\":\"keep_private\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/me/sharing-default",
+            "description": "Changes the default used by future reflection answers. Set updateSharingDefault=true for one manually chosen write."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const enabled = pm.collectionVariables.get('updateSharingDefault') === 'true';",
+                  "pm.collectionVariables.set('updateSharingDefault', 'false');",
+                  "if (!enabled) {",
+                  "  console.warn('Skipped sharing-default update: set updateSharingDefault=true to opt in to this write once.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health/live"
+          }
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health/ready",
+            "description": "Returns 200 when MongoDB is connected, or 503 with the documented error shape otherwise."
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text",
+        "exec": [
+          "const rules = {",
+          "  'Dev login - Aanya': [200, ['data.token', 'data.user.id']],",
+          "  'Dev login - Rohan': [200, ['data.token', 'data.user.id']],",
+          "  'Dev login - Karthik': [200, ['data.token', 'data.user.id']],",
+          "  'Get current user': [200, ['data.user.id']],",
+          "  'Get my profile': [200, ['data.profile.id']],",
+          "  'Update my profile': [200, ['data.profile.id']],",
+          "  'Get profile by user ID': [200, ['data.profile.id']],",
+          "  'Discover profiles': [200, ['data.users']],",
+          "  'List requests': [200, ['data.requests']],",
+          "  'List requests - invalid box (400)': [400, []],",
+          "  'Send connection request': [201, ['data.request.id']],",
+          "  'Accept connection request': [200, ['data.request.id', 'data.connection.id']],",
+          "  'Decline connection request': [200, ['data.request.id']],",
+          "  'Withdraw connection request': [200, ['data.request.id']],",
+          "  'List active connections': [200, ['data.connections']],",
+          "  'Get connection': [200, ['data.connection.id']],",
+          "  'Get home': [200, ['data.greeting', 'data.profileComplete', 'data.needsYourAttention', 'data.unreadNotifications']],",
+          "  'List notifications': [200, ['data.notifications']],",
+          "  'Mark notification as read': [200, ['data.notification.id']],",
+          "  'Get connection journey': [200, ['data.journey.connectionId', 'data.journey.stages']],",
+          "  'Get stage content': [200, ['data.stageContent.stage', 'data.stageContent.guidance', 'data.stageContent.forYou', 'data.stageContent.activities', 'data.stageContent.resources', 'data.stageContent.isMock']],",
+          "  'Complete active stage': [200, ['data.completedStage', 'data.journey']],",
+          "  'Get reflection questions': [200, ['data.questions']],",
+          "  'Save reflection answer': [200, ['data.answer.id']],",
+          "  'Get reflection progress': [200, ['data.progress.answeredCount', 'data.progress.totalQuestions', 'data.progress.complete', 'data.progress.answers']],",
+          "  'List chats': [200, ['data.chats']],",
+          "  'List chats - invalid filter (400)': [400, []],",
+          "  'List messages': [200, ['data.messages', 'data.nextCursor']],",
+          "  'Send message': [201, ['data.message.id', 'data.message.senderId', 'data.message.text', 'data.message.createdAt', 'data.message.isReadByMe']],",
+          "  'Mark received messages as read': [200, ['data.markedRead']],",
+          "  'Set chat mute preference': [200, ['data.chatId', 'data.muted']],",
+          "  'Get preference section': [200, ['data.section', 'data.preferences']],",
+          "  'Update preference section': [200, ['data.section', 'data.preferences']],",
+          "  'Update sharing default': [200, ['data.sharingDefault']],",
+          "  'Liveness': [200, ['data.status']],",
+          "  'Readiness': [200, ['data.status'], [503]]",
+          "};",
+          "const name = pm.info.requestName;",
+          "const rule = rules[name];",
+          "pm.test('Expected HTTP status', function () {",
+          "  pm.expect(rule, 'A response rule must exist for this request').to.exist;",
+          "  const statusMessage = name === 'Send connection request' && pm.response.code === 409",
+          "    ? '409 Conflict: no request was created because a pending request or active connection already exists. Run List requests to recover a pending request ID, or List active connections to recover the connection ID.'",
+          "    : 'Unexpected HTTP status';",
+          "  pm.expect([rule[0]].concat(rule[2] || []), statusMessage).to.include(pm.response.code);",
+          "});",
+          "let body;",
+          "pm.test('Response is valid JSON', function () {",
+          "  body = pm.response.json();",
+          "  pm.expect(body).to.be.an('object');",
+          "});",
+          "if (rule && body) {",
+          "  if (pm.response.code >= 400) {",
+          "    pm.test('Error response follows the documented contract', function () {",
+          "      pm.expect(body.error).to.be.an('object');",
+          "      pm.expect(body.error.code).to.be.a('string').and.not.empty;",
+          "      pm.expect(body.error.message).to.be.a('string').and.not.empty;",
+          "      pm.expect(body.error.details).to.be.an('array');",
+          "    });",
+          "  } else {",
+          "    pm.test('Success response has documented properties', function () {",
+          "      pm.expect(body.data).to.be.an('object');",
+          "      rule[1].forEach(function (path) {",
+          "        const value = path.split('.').reduce(function (current, key) { return current == null ? undefined : current[key]; }, body);",
+          "        pm.expect(value, path).not.to.be.undefined;",
+          "      });",
+          "    });",
+          "  }",
+          "  if (pm.response.code < 400 && name.indexOf('Dev login - ') === 0) {",
+          "    const user = name.substring('Dev login - '.length).toLowerCase();",
+          "    pm.collectionVariables.set(user + 'Token', body.data.token);",
+          "    pm.collectionVariables.set(user + 'UserId', body.data.user.id);",
+          "    if (user === 'aanya') {",
+          "      pm.collectionVariables.set('requestSenderToken', body.data.token);",
+          "      pm.collectionVariables.set('requestSenderId', body.data.user.id);",
+          "    }",
+          "    if (user === 'rohan') {",
+          "      pm.collectionVariables.set('requestRecipientToken', body.data.token);",
+          "      pm.collectionVariables.set('requestRecipientId', body.data.user.id);",
+          "    }",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'List requests') {",
+          "    const senderId = pm.collectionVariables.get('requestSenderId');",
+          "    const recipientId = pm.collectionVariables.get('requestRecipientId');",
+          "    const pending = Array.isArray(body.data.requests) ? body.data.requests.find(function (item) {",
+          "      return item.sender && item.recipient && item.sender.id === senderId && item.recipient.id === recipientId;",
+          "    }) : undefined;",
+          "    const id = pending && pending.id ? pending.id : '';",
+          "    pm.collectionVariables.set('ssRequestId', id);",
+          "    if (id) pm.collectionVariables.set('ssLastRequestId', id);",
+          "  }",
+          "  if (pm.response.code === 201 && name === 'Send connection request' && body.data.request && body.data.request.id) {",
+          "    pm.collectionVariables.set('ssRequestId', body.data.request.id);",
+          "    pm.collectionVariables.set('ssLastRequestId', body.data.request.id);",
+          "  }",
+          "  if (name === 'Send connection request' && pm.response.code === 409) {",
+          "    pm.collectionVariables.set('ssRequestId', '');",
+          "    console.warn('409 Conflict is not a successful create. No request ID was captured; use List requests or List active connections to recover existing state.');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'Accept connection request' && body.data.request && body.data.request.id) {",
+          "    pm.collectionVariables.set('ssLastRequestId', body.data.request.id);",
+          "    pm.collectionVariables.set('ssRequestId', '');",
+          "    pm.collectionVariables.set('requestAction', 'none');",
+          "    if (body.data.connection && body.data.connection.id) pm.collectionVariables.set('ssActiveConnectionId', body.data.connection.id);",
+          "  }",
+          "  if (pm.response.code < 400 && (name === 'Decline connection request' || name === 'Withdraw connection request') && body.data.request && body.data.request.id) {",
+          "    pm.collectionVariables.set('ssLastRequestId', body.data.request.id);",
+          "    pm.collectionVariables.set('ssRequestId', '');",
+          "    pm.collectionVariables.set('requestAction', 'none');",
+          "  }",
+          "  if (pm.response.code === 409 && ['Accept connection request', 'Decline connection request', 'Withdraw connection request'].includes(name)) {",
+          "    pm.collectionVariables.set('ssRequestId', '');",
+          "    console.warn('409 Conflict: this request is no longer pending. Run List requests to refresh the pending request ID.');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'List active connections') {",
+          "    const senderId = pm.collectionVariables.get('requestSenderId');",
+          "    const recipientId = pm.collectionVariables.get('requestRecipientId');",
+          "    const connection = Array.isArray(body.data.connections) ? body.data.connections.find(function (item) {",
+          "      const ids = (item.participants || []).map(function (participant) { return participant.user && participant.user.id; });",
+          "      return ids.includes(senderId) && ids.includes(recipientId);",
+          "    }) : undefined;",
+          "    pm.collectionVariables.set('ssActiveConnectionId', connection && connection.id ? connection.id : '');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'Get connection journey' && body.data.journey) {",
+          "    const journey = body.data.journey;",
+          "    pm.collectionVariables.set('journeyStage', journey.currentStage || (journey.completed ? 'decision' : 'connect'));",
+          "    pm.collectionVariables.set('journeyCompleted', journey.completed ? 'true' : 'false');",
+          "    if (body.data.journey.connectionId) pm.collectionVariables.set('ssActiveConnectionId', body.data.journey.connectionId);",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'Get connection' && body.data.connection && body.data.connection.id) {",
+          "    pm.collectionVariables.set('ssActiveConnectionId', body.data.connection.id);",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'List chats') {",
+          "    const chats = Array.isArray(body.data.chats) ? body.data.chats : [];",
+          "    const connectionId = pm.collectionVariables.get('ssActiveConnectionId');",
+          "    const chat = chats.find(function (item) { return item.connectionId === connectionId; }) || chats[0];",
+          "    pm.collectionVariables.set('chatId', chat && chat.id ? chat.id : '');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'Get reflection questions') {",
+          "    const questions = Array.isArray(body.data.questions) ? body.data.questions : [];",
+          "    pm.collectionVariables.set('questionId', questions.length ? (questions[0]._id || questions[0].id || '') : '');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'List notifications') {",
+          "    const notifications = Array.isArray(body.data.notifications) ? body.data.notifications : [];",
+          "    const unread = notifications.find(function (item) { return !item.readAt; });",
+          "    pm.collectionVariables.set('notificationId', unread && unread.id ? unread.id : '');",
+          "  }",
+          "  if (pm.response.code < 400 && name === 'List messages') {",
+          "    pm.collectionVariables.set('messageCursor', body.data.nextCursor || '');",
+          "    pm.collectionVariables.set('messageHasMore', body.data.nextCursor ? 'true' : 'false');",
+          "    pm.collectionVariables.set('messagePageStarted', 'true');",
+          "  }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "aanyaToken", "value": "", "type": "string" },
+    { "key": "rohanToken", "value": "", "type": "string" },
+    { "key": "karthikToken", "value": "", "type": "string" },
+    { "key": "aanyaUserId", "value": "", "type": "string" },
+    { "key": "rohanUserId", "value": "", "type": "string" },
+    { "key": "karthikUserId", "value": "", "type": "string" },
+    { "key": "ssRequestId", "value": "", "type": "string" },
+    { "key": "ssLastRequestId", "value": "", "type": "string" },
+    { "key": "ssActiveConnectionId", "value": "", "type": "string" },
+    { "key": "requestSenderToken", "value": "", "type": "string" },
+    { "key": "requestSenderId", "value": "", "type": "string" },
+    { "key": "requestRecipientToken", "value": "", "type": "string" },
+    { "key": "requestRecipientId", "value": "", "type": "string" },
+    { "key": "chatId", "value": "", "type": "string" },
+    { "key": "questionId", "value": "", "type": "string" },
+    { "key": "notificationId", "value": "", "type": "string" },
+    { "key": "messageCursor", "value": "", "type": "string" },
+    { "key": "messagePageStarted", "value": "false", "type": "string" },
+    { "key": "messageHasMore", "value": "true", "type": "string" },
+    { "key": "requestBox", "value": "sent", "type": "string" },
+    { "key": "createRequest", "value": "false", "type": "string" },
+    { "key": "requestAction", "value": "none", "type": "string" },
+    { "key": "updateMyProfile", "value": "false", "type": "string" },
+    { "key": "enableNotificationRead", "value": "false", "type": "string" },
+    { "key": "completeActiveStage", "value": "false", "type": "string" },
+    { "key": "saveReflectionAnswer", "value": "false", "type": "string" },
+    { "key": "sendMessage", "value": "false", "type": "string" },
+    { "key": "markMessagesRead", "value": "false", "type": "string" },
+    { "key": "setChatMuted", "value": "false", "type": "string" },
+    { "key": "updatePreferences", "value": "false", "type": "string" },
+    { "key": "updateSharingDefault", "value": "false", "type": "string" },
+    { "key": "chatFilter", "value": "all", "type": "string" },
+    { "key": "journeyStage", "value": "connect", "type": "string" },
+    { "key": "journeyCompleted", "value": "false", "type": "string" },
+    { "key": "preferenceSection", "value": "basic", "type": "string" }
+  ]
+}
