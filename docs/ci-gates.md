@@ -23,6 +23,27 @@ The frontend currently has known TypeScript errors in app code, so
 `npm run typecheck` is not a required CI gate yet. Those errors are tracked as
 app bugs; the blocking frontend check is `frontend tests (Node 20)`.
 
+## Current evidence (2026-11-17)
+
+| PR | Required check | Result |
+|---|---|---|
+| Backend #17 | `backend tests (Node 20)` | success |
+| Backend #17 | `gitleaks (secret scan)` | success |
+| Frontend #4 | `frontend tests (Node 20)` | success |
+| Guide #46 | `test` | success |
+| Guide #46 | `gitleaks (secret scan)` | success |
+
+`gh api repos/<owner>/<repo>/branches/dev/protection` still returns 404 for all
+three repos. Treat branch protection as **not configured or not visible to this
+token** until an admin confirms it in the GitHub UI.
+
+The failing-check proof in section 3 is therefore **not executed yet**. It
+requires an admin to enable the rules first; a PR cannot prove a block while the
+branch is unprotected.
+
+The frontend typecheck baseline is 19 errors; it is tracked separately and is not
+a required check in this gate.
+
 ## 2. Configure branch protection (manual, GitHub UI)
 
 For each repo, open **Settings -> Branches -> Branch protection rules -> Add
@@ -76,9 +97,10 @@ evidence. One screenshot per repo is enough.
 
 The current open workflow PRs should merge before branch protection is enabled:
 
-1. Backend PR #17 (`backend tests (Node 20)`).
+1. Backend PR #17 (`backend tests (Node 20)` and `gitleaks (secret scan)`).
 2. Frontend PR #2 (`gitleaks (secret scan)`).
 3. Guide PR #46 (`gitleaks (secret scan)`).
-4. Frontend D2-27 PR (`frontend tests (Node 20)`).
+4. Frontend D2-27 PR #4 (`frontend tests (Node 20)`).
+5. Backend D2-27 PR #20 (this checklist) after the gate workflow is on `dev`.
 
 Backend D1-08, D1-10, D1-09 follow-up and D1-11 are separate from this gate.
