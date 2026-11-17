@@ -120,6 +120,7 @@ Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
 | `GUIDE_SERVICE_URL` | Guide base URL, no trailing slash | no |
 | `SENTRY_DSN` | error reporting (optional until D2-23) | 🔒 |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact browser origins; no wildcard in production (D1-09) | no |
+| `TRUST_PROXY` | `1` behind Render's proxy so rate limiting uses the client IP (D1-10) | no |
 | `EMAIL_API_KEY` | OTP/transactional email (Ankit) | 🔒 |
 | `INTERNAL_API_KEY` | service-to-service auth if enabled | 🔒 |
 
