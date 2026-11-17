@@ -282,9 +282,19 @@ production run must not use --allow-skips.`);
     await run(`Guide warm response under ${options.maxGuideSeconds}s`, async () => {
         // Render Free may cold-start for 20-40 s. Wake it first, record that
         // separately, then require the warm response to meet the launch target.
-        const wake = await http(`${guide}/health`, {}, options.guideColdTimeoutMs);
-        if (wake.status !== 200) {
-            throw new Error(`wake GET ${guide}/health returned ${wake.status}`);
+        let wake = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+            wake = await http(`${guide}/health`, {}, options.guideColdTimeoutMs);
+            if (wake.status === 200) {
+                break;
+            }
+            if (![502, 503, 504].includes(wake.status) || attempt === 1) {
+                throw new Error(`wake GET ${guide}/health returned ${wake.status}`);
+            }
+            await sleep(2000);
+        }
+        if (!wake || wake.status !== 200) {
+            throw new Error("wake GET Guide /health did not become ready");
         }
         const response = await http(`${guide}/health`, {}, options.timeoutMs);
         if (response.status !== 200) {
