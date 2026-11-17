@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const { corsOptions } = require("./config/cors");
@@ -22,6 +23,9 @@ initSentry();
 
 const app = express();
 
+// Security headers run first. The API is consumed cross-origin by the web app,
+// so CORP is set to cross-origin while the rest of Helmet's defaults stay on.
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "100kb" }));
 
