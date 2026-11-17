@@ -12,6 +12,7 @@
 "sentry:smoke": "node scripts/sentry-smoke.js",
 "check:guide": "node scripts/check-guide.js",
 "verify:staging": "node scripts/verify-staging.js",
+"check:otp-deliverability": "node scripts/otp-deliverability-check.js",
 "test": "node --test ./test/b1.test.js ./test/b2.test.js ./test/b3.test.js ./test/log-privacy.test.js ./test/sentry-optional.test.js ./test/cors.test.js",
 "test:sentry": "node --test ./test/sentry-optional.test.js",
     "test:integration": "node --test ./test/b1.integration.test.js",
