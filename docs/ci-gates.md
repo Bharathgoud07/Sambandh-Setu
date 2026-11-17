@@ -10,10 +10,10 @@ check that cannot run.
 | Repo | Workflow | Required check name | Status |
 |---|---|---|---|
 | Node backend | `.github/workflows/security.yml` | `gitleaks (secret scan)` | on `dev` |
-| Node backend | `.github/workflows/backend-ci.yml` | `backend tests (Node 20)` | PR #17 |
-| Frontend | `.github/workflows/security.yml` | `gitleaks (secret scan)` | PR #2 |
-| Frontend | `.github/workflows/frontend-ci.yml` | `frontend tests (Node 20)` | PR for D2-27 |
-| Setu Guide | `.github/workflows/security.yml` | `gitleaks (secret scan)` | PR #46 |
+| Node backend | `.github/workflows/backend-ci.yml` | `backend tests (Node 20)` | on `dev` (PR #17 merged) |
+| Frontend | `.github/workflows/security.yml` | `gitleaks (secret scan)` | PR #2 open, green |
+| Frontend | `.github/workflows/frontend-ci.yml` | `frontend tests (Node 20)` | PR #4 open, green |
+| Setu Guide | `.github/workflows/security.yml` | `gitleaks (secret scan)` | PR #46 open, green |
 | Setu Guide | `.github/workflows/ci.yml` | `test` | on `dev` |
 
 Do not require `Vercel Preview Comments`: it is a deployment integration, not a
@@ -27,8 +27,12 @@ app bugs; the blocking frontend check is `frontend tests (Node 20)`.
 
 | PR | Required check | Result |
 |---|---|---|
-| Backend #17 | `backend tests (Node 20)` | success |
-| Backend #17 | `gitleaks (secret scan)` | success |
+| Backend #17 (merged) | `backend tests (Node 20)` | success; on `dev` |
+| Backend #17 (merged) | `gitleaks (secret scan)` | success; on `dev` |
+| Backend `dev` local run | `npm test` | 23/23 pass |
+| Backend `dev` local run | `npm run test:security` | 1/1 pass |
+| Backend `dev` local run | `npm run test:ratelimit` | 2/2 pass |
+| Frontend #2 | `gitleaks (secret scan)` | success |
 | Frontend #4 | `frontend tests (Node 20)` | success |
 | Guide #46 | `test` | success |
 | Guide #46 | `gitleaks (secret scan)` | success |
@@ -95,12 +99,14 @@ evidence. One screenshot per repo is enough.
 
 ## 4. Merge order for open PRs
 
-The current open workflow PRs should merge before branch protection is enabled:
+The remaining open workflow PRs should merge before branch protection is
+enabled:
 
-1. Backend PR #17 (`backend tests (Node 20)` and `gitleaks (secret scan)`).
-2. Frontend PR #2 (`gitleaks (secret scan)`).
-3. Guide PR #46 (`gitleaks (secret scan)`).
-4. Frontend D2-27 PR #4 (`frontend tests (Node 20)`).
-5. Backend D2-27 PR #20 (this checklist) after the gate workflow is on `dev`.
+1. Frontend PR #2 (`gitleaks (secret scan)`).
+2. Guide PR #46 (`gitleaks (secret scan)`).
+3. Frontend D2-27 PR #4 (`frontend tests (Node 20)`).
+4. Backend D2-27 PR #20 (this checklist) after the gate workflows are on
+   `dev`.
 
+Backend PR #17 is already merged, so both backend checks exist on `dev`.
 Backend D1-08, D1-10, D1-09 follow-up and D1-11 are separate from this gate.
