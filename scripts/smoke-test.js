@@ -250,11 +250,13 @@ production run must not use --allow-skips.`);
     });
 
     const token = process.env.SMOKE_TOKEN;
-    if (!token) {
+    const connectionId = process.env.SMOKE_CONNECTION_ID;
+    if (!token || !connectionId) {
+        const missing = [!token && "SMOKE_TOKEN", !connectionId && "SMOKE_CONNECTION_ID"].filter(Boolean).join(" and ");
         if (options.allowSkips) {
-            skip("Node /guide/chat reply or fallback", "SMOKE_TOKEN not set (local dry run)");
+            skip("Node /guide/chat reply or fallback", `${missing} not set (local dry run)`);
         } else {
-            fail("Node /guide/chat reply or fallback", new Error("SMOKE_TOKEN is required for production smoke test"));
+            fail("Node /guide/chat reply or fallback", new Error(`${missing} is required for production smoke test`));
         }
     } else {
         await run("Node /guide/chat reply or fallback", async () => {
@@ -266,7 +268,7 @@ production run must not use --allow-skips.`);
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ message: "Setu production smoke test" }),
+                    body: JSON.stringify({ connectionId, message: "Setu production smoke test" }),
                 },
                 options.timeoutMs
             );

@@ -1,4 +1,4 @@
-# Production deployment — Node API + Setu Guide (D3-12)
+﻿# Production deployment â€” Node API + Setu Guide (D3-12)
 
 Owner: Aditya (DevOps 1). Updated: 2026-11-17.
 No secret values belong in this file. Env names are in
@@ -10,7 +10,7 @@ No secret values belong in this file. Env names are in
 
 ## 0. Preconditions
 
-- [ ] Day 1/2 PRs merged into `dev` (backend #1–#6, guide #44–#47).
+- [ ] Day 1/2 PRs merged into `dev` (backend #1â€“#6, guide #44â€“#47).
 - [ ] `dev` CI green for backend and guide.
 - [ ] Production Atlas project/cluster/user created (D3-11; already done).
 - [ ] Production values generated and stored in the approved secure secret
@@ -37,37 +37,37 @@ No secret values belong in this file. Env names are in
 
 Tell Ankit and Pooja as soon as the remaining smoke checks are green.
 
-## 2. Node API — Render Web Service
+## 2. Node API â€” Render Web Service
 
-1. Render → **New +** → **Web Service** → repository
+1. Render â†’ **New +** â†’ **Web Service** â†’ repository
    `Bharathgoud07/Sambandh-Setu`.
 2. Branch: `dev` (after the PRs merge).
 3. Runtime: **Docker**. Dockerfile path: `./Dockerfile`; context: `.`.
 4. Name: `sambandh-setu-api-prod`. Region: **Singapore**. Plan: **Free**
    (paid plans are not approved).
 5. Health check path: `/health`.
-6. Environment → add (values from the secure files, never from chat):
+6. Environment â†’ add (values from the secure files, never from chat):
    - `NODE_ENV=production`
-   - `MONGODB_URI` → approved secure secret store entry (never in git/chat)
-   - `JWT_SECRET` → approved secure secret store entry (64 chars)
-   - `GUIDE_SERVICE_URL` → the production Guide URL (no trailing slash)
+   - `MONGODB_URI` â†’ approved secure secret store entry (never in git/chat)
+   - `JWT_SECRET` â†’ approved secure secret store entry (64 chars)
+   - `GUIDE_SERVICE_URL` â†’ the production Guide URL (no trailing slash)
    - `SENTRY_DSN` (optional until D2-23 is unblocked)
    - `CORS_ALLOWED_ORIGINS` with the exact comma-separated browser origins
      (no trailing slash, no `*`)
    - `TRUST_PROXY=1` so the auth limiter keys on the real client IP behind
      Render's proxy
-7. **Manual Deploy** → wait for **Live**. `GET /health` must return
+7. **Manual Deploy** â†’ wait for **Live**. `GET /health` must return
    `{"data":{"status":"ready"}}`.
 
 Dockerfile behavior: exposes `PORT` default 5000, runs as non-root, health
 probe uses `/health`.
 
-## 3. Setu Guide — Render Web Service
+## 3. Setu Guide â€” Render Web Service
 
 Use Render's **native Python** runtime (staging uses native Python; the
 repository Dockerfile hardcodes port 8000 and does not bind Render's `$PORT`).
 
-1. Render → **New +** → **Web Service** → repository `ujala100/setu-guide`.
+1. Render â†’ **New +** â†’ **Web Service** â†’ repository `ujala100/setu-guide`.
 2. Branch: `dev`.
 3. Runtime: **Python**. Build command:
    `pip install -r requirements.txt`.
@@ -88,7 +88,7 @@ repository Dockerfile hardcodes port 8000 and does not bind Render's `$PORT`).
    - `CACHE_ENABLED=true`, `CACHE_TTL_SECONDS=600`, `CACHE_MAX_ITEMS=500`
    - `LOG_LEVEL=INFO`
    - `LLM_API_KEY` only if `USE_MOCK=false` (new key)
-8. **Manual Deploy** → wait for **Live**. `GET /health` must return
+8. **Manual Deploy** â†’ wait for **Live**. `GET /health` must return
    `{"status":"ok"}`.
 
 If you must use the Docker image instead, change the runtime CMD to bind
@@ -131,7 +131,7 @@ Checks (all synthetic data):
    script measures the cold-start wake separately; cold starts are accepted.
 8. `/me`, `/connections`, `/chats` refuse unauthenticated access (401/403).
 
-`SMOKE_TOKEN` is required for check 6. Production `NODE_ENV=production`
+`SMOKE_TOKEN` and `SMOKE_CONNECTION_ID` are required for check 6. The Guide bridge validates connection membership, so the token must belong to a participant in the synthetic connection. Production `NODE_ENV=production`
 disables `/auth/dev-login`, so use a short-lived **synthetic** token from an
 approved test account (never a real pilot's token). Export it without putting
 it in shell history:
@@ -146,9 +146,9 @@ failure.
 
 ### Current production smoke result (2026-11-17)
 
-The full script was not run because production has no `SMOKE_TOKEN` for the
-`/guide/chat` check. The checks below were run manually against the live
-service; no real user data or secret was sent.
+The full script was not run because production has no `SMOKE_TOKEN` or
+`SMOKE_CONNECTION_ID` for the `/guide/chat` check. The checks below were run
+manually against the live service; no real user data or secret was sent.
 
 | Check | Result | Evidence |
 |---|---|---|
@@ -159,14 +159,14 @@ service; no real user data or secret was sent.
 | CORS refuses a random origin | PASS | unknown origin gets no ACAO; app/website origins get exact ACAO |
 | Auth rate limit returns 429 | PASS | limiter headers show `limit=5`; five-request probe returned 429 |
 | OTP request + verify respond | FAIL | `/auth/otp/request` returns 404 (`NOT_FOUND`); `/auth/otp/verify` is not deployed |
-| Node `/guide/chat` reply/fallback | FAIL | route not on `dev`; `SMOKE_TOKEN` also required |
+| Node `/guide/chat` reply/fallback | FAIL | route not deployed; `SMOKE_TOKEN` and `SMOKE_CONNECTION_ID` also required |
 
 Result: **6 passed, 2 failed**. Do not mark D3-12 done until all eight checks
 pass. The remaining failures are owner code merges, not Render configuration.
 
 ## 6. Rollback
 
-1. Render → service → **Deploys** → select the previous successful deploy →
+1. Render â†’ service â†’ **Deploys** â†’ select the previous successful deploy â†’
    **Rollback**.
 2. If the failure is configuration-only, revert the env var and redeploy.
 3. If the DB is affected, follow `docs/runbooks/backup-restore.md` (staging
@@ -190,3 +190,4 @@ pass. The remaining failures are owner code merges, not Render configuration.
   upgrade.
 - **Secrets:** production `JWT_SECRET`, DB password and any LLM key are new
   values; never reuse staging/dev.
+

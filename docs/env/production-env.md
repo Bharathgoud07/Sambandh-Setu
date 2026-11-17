@@ -1,7 +1,7 @@
-# Production environment — names, isolation and verification (D3-11)
+﻿# Production environment â€” names, isolation and verification (D3-11)
 
 Owner: Aditya (DevOps 1). Updated: 2026-11-17.
-Rule: **names and paths only — this file must never contain a secret value.**
+Rule: **names and paths only â€” this file must never contain a secret value.**
 
 Source of names: `setu-guide/docs/env-vars.md` (PR #44) plus `SENTRY_DSN` from
 D2-23. Production adds no new application variables.
@@ -39,9 +39,9 @@ If `mongodump` fails with
 role is scoped to `admin` instead of the application database. Fix it before
 deploy or backup:
 
-1. Atlas → **Setu Production** → **Security** → **Database Access**.
-2. Edit `setu_prod_app` → Built-in Role **readWrite** → Database
-   **`sambandh_setu`** → Save.
+1. Atlas â†’ **Setu Production** â†’ **Security** â†’ **Database Access**.
+2. Edit `setu_prod_app` â†’ Built-in Role **readWrite** â†’ Database
+   **`sambandh_setu`** â†’ Save.
 3. Re-run the role check; do not proceed while the role is `admin`.
 
 An Atlas CLI equivalent (project owner only):
@@ -62,7 +62,8 @@ atlas dbusers update setu_prod_app \
 | `PORT` | Render assigns it; do not set manually | no | Render |
 | `MONGODB_URI` | approved secure secret store entry (outside repo) | **yes** | Render env (secret) |
 | `JWT_SECRET` | approved secure secret store entry (64 chars, outside repo) | **yes** | Render env (secret) |
-| `GUIDE_SERVICE_URL` | production Guide URL (no trailing slash) | no | Render env |
+| `OTP_HMAC_SECRET` | 32+ char secret for hashing OTP codes (Sakshi PR #23); never reuse `JWT_SECRET` | **yes** | Render env (secret) |
+| `GUIDE_SERVICE_URL` | `https://setu-guide-prod.onrender.com`; do not use the example/staging URL in production | no | Render env |
 | `SENTRY_DSN` | new production Sentry project/DSN | **yes** | Render env (secret) |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact website + Expo web origins; no `*` (D1-09) | no | Render env |
 | `TRUST_PROXY` | `1`; Render terminates TLS and supplies the client IP in `X-Forwarded-For` (D1-10) | no | Render env |
@@ -162,7 +163,7 @@ node --test test/prod-config-isolation.test.js
    CORS and rate limiting are live as of 2026-11-17; the production smoke test
    remains blocked on those owner routes.
 
-## 5. Production security verification — 2026-11-17
+## 5. Production security verification â€” 2026-11-17
 
 Deploy `dep-dbtv2b3m8hqs73dkv83g`, commit `d2e90ee`, status **live**. No secret
 values were printed.
@@ -181,3 +182,5 @@ values were printed.
 real client IP instead of Render's proxy address. Do not repeat the five-request
 429 probe: it consumes the hourly auth bucket for the test client. The limiter
 unit tests cover the 429 response contract.
+
+
