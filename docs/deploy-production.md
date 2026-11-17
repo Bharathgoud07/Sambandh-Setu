@@ -50,7 +50,8 @@ Tell Ankit and Pooja as soon as the remaining smoke checks are green.
    - `JWT_SECRET` → `C:\Users\adity\.setu-secrets\prod\jwt-secret.txt`
    - `GUIDE_SERVICE_URL` → the production Guide URL (no trailing slash)
    - `SENTRY_DSN` (optional until D2-23 is unblocked)
-   - `CORS_ORIGINS` once Ankit's allow-list lands
+   - `CORS_ALLOWED_ORIGINS` with the exact comma-separated browser origins
+     (no trailing slash, no `*`)
 7. **Manual Deploy** → wait for **Live**. `GET /health` must return
    `{"data":{"status":"ready"}}`.
 
