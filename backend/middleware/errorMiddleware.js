@@ -22,7 +22,16 @@ const errorHandler = (error, req, res, next) => {
     } else if (error.code === 11000) {
         apiError = ApiError.conflict("A record with the same unique value already exists");
     } else if (!(error instanceof ApiError)) {
-        console.error("Unhandled API error:", error.message);
+        // Never log error.message: parser and driver messages can contain
+        // request data (PAN, Aadhaar, OTP, email, phone). Type, code and the
+        // matched route are enough to debug without leaking anything.
+        console.error(
+            "Unhandled API error: name=%s code=%s method=%s route=%s",
+            error.name || "Error",
+            error.code || "none",
+            req.method,
+            (req.route && req.route.path) || "unmatched"
+        );
         apiError = new ApiError(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred");
     }
 

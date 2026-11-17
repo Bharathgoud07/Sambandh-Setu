@@ -163,7 +163,11 @@ const seedUsers = async () => {
 
 seedUsers()
     .catch((error) => {
-        console.error("User seeding failed:", error.message);
+        console.error(
+            "User seeding failed: name=%s code=%s",
+            error.name || "Error",
+            error.code || "none"
+        );
         process.exitCode = 1;
     })
     .finally(async () => {

@@ -16,12 +16,16 @@ async function testConnection() {
 
         console.log("Ping successful:", result);
     } catch (error) {
-        console.error("Connection failed:", error.message);
+        console.error(
+            "Connection failed: name=%s code=%s",
+            error.name || "Error",
+            error.code || "none"
+        );
 
-        let cause = error;
+        let cause = error.cause;
 
         while (cause) {
-            console.error("Cause:", cause.message);
+            console.error("Cause: name=%s code=%s", cause.name || "Error", cause.code || "none");
             cause = cause.cause;
         }
     } finally {
