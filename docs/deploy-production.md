@@ -1,6 +1,6 @@
 # Production deployment — Node API + Setu Guide (D3-12)
 
-Owner: Aditya (DevOps 1). Updated: 2026-11-16.
+Owner: Aditya (DevOps 1). Updated: 2026-11-17.
 No secret values belong in this file. Env names are in
 `docs/env/production-env.md`; values live in the host environment.
 
@@ -20,11 +20,13 @@ No secret values belong in this file. Env names are in
       upgrade**.
 - [ ] Sentry DSN and Slack/Discord webhook available (D2-23 / D3-14).
 
-> **Status 2026-11-16:** both production services exist. Guide is live. Node
-> was redeployed from `dev` after PR #3 merged; `GET /health` returned
-> `200 {"data":{"status":"ready"}}` in 0.5 s. The production smoke test is
-> **3 passed / 5 failed** because the OTP, Helmet/CORS, and `/guide/chat`
-> owner PRs are not on `dev` yet.
+> **Status 2026-11-17:** both production services are live. Node was
+> redeployed from `dev` at commit `d2e90ee` (deploy
+> `dep-dbtv2b3m8hqs73dkv83g`). `GET /health` returns
+> `200 {"data":{"status":"ready"}}`. Helmet, the CORS allow-list and rate
+> limiting now pass in production. The remaining smoke failures are the OTP
+> request route and the Node `/guide/chat` route, which are still not on
+> `dev`.
 
 ## 1. Production URLs (live)
 
@@ -52,6 +54,8 @@ Tell Ankit and Pooja as soon as the remaining smoke checks are green.
    - `SENTRY_DSN` (optional until D2-23 is unblocked)
    - `CORS_ALLOWED_ORIGINS` with the exact comma-separated browser origins
      (no trailing slash, no `*`)
+   - `TRUST_PROXY=1` so the auth limiter keys on the real client IP behind
+     Render's proxy
 7. **Manual Deploy** → wait for **Live**. `GET /health` must return
    `{"data":{"status":"ready"}}`.
 
@@ -137,32 +141,25 @@ $env:SMOKE_TOKEN = (Get-Content "C:\Users\adity\.setu-secrets\prod\smoke-token.t
 `--allow-skips` is for local dry runs only; a production run with skips is a
 failure.
 
-### Current production smoke result (2026-11-16)
+### Current production smoke result (2026-11-17)
 
-Command:
+The full script was not run because production has no `SMOKE_TOKEN` for the
+`/guide/chat` check. The checks below were run manually against the live
+service; no real user data or secret was sent.
 
-```bash
-node scripts/smoke-test.js \
-  --base-url https://sambandh-setu-api-prod.onrender.com \
-  --guide-url https://setu-guide-prod.onrender.com \
-  --timeout-ms 60000
-```
-
-Result: **3 passed, 5 failed, 0 skipped**.
-
-| Check | Result | Reason |
+| Check | Result | Evidence |
 |---|---|---|
-| `/health` 200 + DB ready | PASS | `{"data":{"status":"ready"}}` in 423 ms |
-| Guide first call under 5 s | PASS | 571 ms while warm; after idle the free instance can take ~22 s to wake. Warm it with `GET /health` before this check. |
-| Protected routes refuse unauthenticated access | PASS | `/me`, `/connections`, `/chats` returned 401/403 |
-| Security headers | FAIL | no `x-content-type-options`; Helmet not on `dev` |
-| CORS refuses a random origin | FAIL | `Access-Control-Allow-Origin: *` |
-| Auth rate limit returns 429 | FAIL | `/auth/otp/request` returned 404 |
-| OTP request responds | FAIL | `/auth/otp/request` returned 404 (`NOT_FOUND`) |
+| `/health` 200 + DB ready | PASS | `200 {"data":{"status":"ready"}}` |
+| Guide first call under 5 s | PASS | `/health` 200; Guide `/v1/guide/chat` 200 |
+| Protected routes refuse unauthenticated access | PASS | `/me`, `/connections`, `/chats` returned 401 |
+| Security headers | PASS | HSTS, CSP, `x-content-type-options: nosniff`, `x-frame-options: SAMEORIGIN`; no `x-powered-by` |
+| CORS refuses a random origin | PASS | unknown origin gets no ACAO; app/website origins get exact ACAO |
+| Auth rate limit returns 429 | PASS | limiter headers show `limit=5`; five-request probe returned 429 |
+| OTP request responds | FAIL | `/auth/otp/request` returns 404 (`NOT_FOUND`) |
 | Node `/guide/chat` reply/fallback | FAIL | route not on `dev`; `SMOKE_TOKEN` also required |
 
-Do not mark D3-12 done until all eight checks pass. The Node deploy itself is
-live; the remaining failures are owner code merges, not Render configuration.
+Result: **6 passed, 2 failed**. Do not mark D3-12 done until all eight checks
+pass. The remaining failures are owner code merges, not Render configuration.
 
 ## 6. Rollback
 

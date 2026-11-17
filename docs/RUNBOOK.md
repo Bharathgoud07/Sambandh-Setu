@@ -1,11 +1,12 @@
 # Setu launch runbook
 
 Owner: Aditya (DevOps 1). Version: 1.0 (draft until production smoke passes).
-Updated: 2026-11-16.
+Updated: 2026-11-17.
 
-> **Launch-day status (2026-11-16):** staging is live; production Atlas, Guide
+> **Launch-day status (2026-11-17):** staging is live; production Atlas, Guide
 > and Node are live. Production Node `/health` returns `200 ready`; the smoke
-> test is **3 passed / 5 failed**. OTP, security middleware (Helmet/CORS) and
+> test is **6 passed / 2 failed**. Helmet, the CORS allow-list and rate limiting
+> are now live (deploy `dep-dbtv2b3m8hqs73dkv83g`, commit `d2e90ee`); OTP and
 > Node `/guide/chat` are still not on `dev`. The production DB role was
 > corrected, a manual dump/restore drill passed, and both production monitors
 > exist (Guide liveness Up; Node `/health` Up). Free-hour decision (2026-11-16):
@@ -177,9 +178,10 @@ Vercel bundle still contains `https://REPLACE-WITH-STAGING-URL` and
 7. Verify: `GET /health` → `200 {"data":{"status":"ready"}}`; `/health/live`
    and `/health/ready` also 200.
 
-Live 2026-11-16 after PR #3 merged (`dev` commit `7f595cd`, deploy
-`dep-dbtintt9fdbs73bccqe0`); `/health` returned `200 ready` in 0.5 s and the
-UptimeRobot Node monitor is **Up**.
+Live 2026-11-17 after the Helmet/CORS/rate-limit PRs merged (`dev` commit
+`d2e90ee`, deploy `dep-dbtv2b3m8hqs73dkv83g`); `/health` returns `200 ready`,
+security headers and the CORS allow-list are present, and the UptimeRobot Node
+monitor is **Up**.
 
 Full step-by-step: `docs/deploy-production.md`.
 
@@ -482,12 +484,11 @@ Exit criteria (Day 3):
 - [ ] Website/waitlist live.
 - [ ] Closed test started.
 
-Current gaps (2026-11-16):
+Current gaps (2026-11-17):
 
 | Gap | Impact | Owner |
 |---|---|---|
-| Production smoke **3 passed / 5 failed** | cannot mark D3-12 done | lead/reviewers |
-| `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit (laptop unavailable until 20 Nov; back 21 Nov) |
+| Production smoke **6 passed / 2 failed** | cannot mark D3-12 done | lead/reviewers |
 | `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |

@@ -1,6 +1,6 @@
 # Production environment — names, isolation and verification (D3-11)
 
-Owner: Aditya (DevOps 1). Updated: 2026-11-16.
+Owner: Aditya (DevOps 1). Updated: 2026-11-17.
 Rule: **names and paths only — this file must never contain a secret value.**
 
 Source of names: `setu-guide/docs/env-vars.md` (PR #44) plus `SENTRY_DSN` from
@@ -65,6 +65,7 @@ atlas dbusers update setu_prod_app \
 | `GUIDE_SERVICE_URL` | production Guide URL (no trailing slash) | no | Render env |
 | `SENTRY_DSN` | new production Sentry project/DSN | **yes** | Render env (secret) |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact website + Expo web origins; no `*` (D1-09) | no | Render env |
+| `TRUST_PROXY` | `1`; Render terminates TLS and supplies the client IP in `X-Forwarded-For` (D1-10) | no | Render env |
 | `EMAIL_API_KEY` | provider key for OTP mail (Ankit) | **yes** | Render env (secret) |
 | `INTERNAL_API_KEY` | only if Guide service auth is enabled | **yes** | Render env (secret) |
 
@@ -151,7 +152,29 @@ node --test test/prod-config-isolation.test.js
 4. **Guide mode.** `USE_MOCK=true` keeps the template fallback and avoids a
    vendor key; flip to `false` only with a new `LLM_API_KEY` and an exercised
    `handle_chat`.
-5. **CORS is still open** (`app.use(cors())`; `Access-Control-Allow-Origin: *`)
-   until Ankit's allow-list lands. That is a launch security finding.
-6. **`/guide/chat`, OTP mail and security headers are not on `dev` yet**; the
-   production smoke test cannot pass until those owner PRs merge.
+5. **CORS is now allow-listed in production.** The 2026-11-17 deploy returns
+   `Access-Control-Allow-Origin` only for the configured app/website origins;
+   an unknown origin gets no ACAO header.
+6. **OTP mail and Node `/guide/chat` are still missing on `dev`.** Helmet,
+   CORS and rate limiting are live as of 2026-11-17; the production smoke test
+   remains blocked on those owner routes.
+
+## 5. Production security verification — 2026-11-17
+
+Deploy `dep-dbtv2b3m8hqs73dkv83g`, commit `d2e90ee`, status **live**. No secret
+values were printed.
+
+| Check | Result |
+|---|---|
+| `GET /` security headers | `strict-transport-security`, `content-security-policy`, `x-content-type-options: nosniff`, `x-frame-options: SAMEORIGIN`, `referrer-policy: no-referrer`; no `x-powered-by` |
+| CORS, configured app origin | ACAO equals `https://setu-app-ten.vercel.app` |
+| CORS, configured website origin | ACAO equals `https://sambandh-setu-website.vercel.app` |
+| CORS, unknown origin | no ACAO header |
+| Global limiter | `ratelimit: limit=300, remaining=299, reset=900` on `GET /` |
+| Auth limiter | `ratelimit: limit=5, remaining=4, reset=3600` on one `POST /auth/dev-login`; a 5-request probe returned **429** |
+| `/me`, `/connections`, `/chats` without auth | `401` |
+
+`TRUST_PROXY=1` is set on the Render service so the auth limiter keys on the
+real client IP instead of Render's proxy address. Do not repeat the five-request
+429 probe: it consumes the hourly auth bucket for the test client. The limiter
+unit tests cover the 429 response contract.
