@@ -77,6 +77,6 @@ request.on("error", (error) => {
   if (error.code === "TIMEOUT") {
     fail(`Setu Guide /health did not answer within ${timeoutMs / 1000}s.`);
   }
-  const reason = error.code || error.message || "network error";
+  const reason = error.code || error.name || "network error";
   fail(`Setu Guide /health could not be reached (${reason}).`);
 });
