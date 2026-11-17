@@ -118,7 +118,7 @@ Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
 | `JWT_SECRET` | HS256 session signing, at least 32 chars | 🔒 |
 | `GUIDE_SERVICE_URL` | Guide base URL, no trailing slash | no |
 | `SENTRY_DSN` | error reporting (optional until D2-23) | 🔒 |
-| `CORS_ORIGINS` | browser allow-list (code pending) | no |
+| `CORS_ALLOWED_ORIGINS` | comma-separated exact browser origins; no wildcard in production (D1-09) | no |
 | `EMAIL_API_KEY` | OTP/transactional email (Ankit) | 🔒 |
 | `INTERNAL_API_KEY` | service-to-service auth if enabled | 🔒 |
 
@@ -504,7 +504,7 @@ Current gaps (2026-11-16):
 | `/health` 503 | Render logs; Atlas access list; `MONGODB_URI` | fix DB user/network/URI; redeploy |
 | `/health` 404 | wrong service/branch; health path | deploy `dev` with `/health` alias; set health path |
 | Guide 502/504 | Guide `/health`, Render logs, cold start | wait for the free instance to wake; `USE_MOCK=true` fallback |
-| CORS error in browser | response `Access-Control-Allow-Origin` | fix `CORS_ORIGINS` allow-list; no `*` in prod |
+| CORS error in browser | response `Access-Control-Allow-Origin` | fix `CORS_ALLOWED_ORIGINS` allow-list; no `*` in prod |
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
 | `mongodump` says `listCollections` denied | DB user role scope | set `readWrite` on `sambandh_setu`, not `admin`; re-run |

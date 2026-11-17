@@ -43,6 +43,17 @@ test("fails when production JWT equals staging JWT", () => {
     assert.ok(failures.some((failure) => failure.startsWith("JWT_SECRET: production value equals staging value")));
 });
 
+test("fails when production CORS allow-list equals staging", () => {
+    const sameOrigins = "https://web.example.com";
+    const { failures } = compareConfigs(
+        { ...production, CORS_ALLOWED_ORIGINS: sameOrigins },
+        { ...staging, CORS_ALLOWED_ORIGINS: sameOrigins }
+    );
+    assert.ok(failures.some((failure) => failure.startsWith(
+        "CORS_ALLOWED_ORIGINS: production value equals staging value"
+    )));
+});
+
 test("fails when production DB host or user equals staging", () => {
     const sameHost = compareConfigs(
         { ...production, MONGODB_URI: production.MONGODB_URI.replace("prod-db", "staging-db") },

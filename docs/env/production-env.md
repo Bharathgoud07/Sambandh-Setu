@@ -64,7 +64,7 @@ atlas dbusers update setu_prod_app \
 | `JWT_SECRET` | `C:\Users\adity\.setu-secrets\prod\jwt-secret.txt` (64 chars) | **yes** | Render env (secret) |
 | `GUIDE_SERVICE_URL` | production Guide URL (no trailing slash) | no | Render env |
 | `SENTRY_DSN` | new production Sentry project/DSN | **yes** | Render env (secret) |
-| `CORS_ORIGINS` | website + Expo web origins (once Ankit's allow-list lands) | no | Render env |
+| `CORS_ALLOWED_ORIGINS` | comma-separated exact website + Expo web origins; no `*` (D1-09) | no | Render env |
 | `EMAIL_API_KEY` | provider key for OTP mail (Ankit) | **yes** | Render env (secret) |
 | `INTERNAL_API_KEY` | only if Guide service auth is enabled | **yes** | Render env (secret) |
 
@@ -118,7 +118,7 @@ The check fails when:
 
 - a sensitive value equals staging (`JWT_SECRET`, `MONGODB_URI`,
   `GUIDE_SERVICE_URL`, `SENTRY_DSN`, `LLM_API_KEY`, `INTERNAL_API_KEY`,
-  `CORS_ORIGINS`, `EXPO_PUBLIC_API_URL`);
+  `CORS_ALLOWED_ORIGINS`, `EXPO_PUBLIC_API_URL`);
 - the production Mongo host or DB user equals staging;
 - `JWT_SECRET` is shorter than 32 characters;
 - `NODE_ENV` is not `production`;
