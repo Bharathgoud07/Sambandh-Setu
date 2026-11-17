@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const { corsOptions } = require("./config/cors");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -21,7 +22,7 @@ initSentry();
 
 const app = express();
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "100kb" }));
 
 app.get("/", (req, res) => {
