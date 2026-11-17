@@ -60,13 +60,13 @@ atlas dbusers update setu_prod_app \
 |---|---|---|---|
 | `NODE_ENV` | `production` | no | Render env |
 | `PORT` | Render assigns it; do not set manually | no | Render |
-| `MONGODB_URI` | `C:\Users\adity\.setu-secrets\prod\mongodb-uri.txt` | **yes** | Render env (secret) |
-| `JWT_SECRET` | `C:\Users\adity\.setu-secrets\prod\jwt-secret.txt` (64 chars) | **yes** | Render env (secret) |
+| `MONGODB_URI` | approved secure secret store entry (outside repo) | **yes** | Render env (secret) |
+| `JWT_SECRET` | approved secure secret store entry (64 chars, outside repo) | **yes** | Render env (secret) |
 | `GUIDE_SERVICE_URL` | production Guide URL (no trailing slash) | no | Render env |
 | `SENTRY_DSN` | new production Sentry project/DSN | **yes** | Render env (secret) |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact website + Expo web origins; no `*` (D1-09) | no | Render env |
 | `TRUST_PROXY` | `1`; Render terminates TLS and supplies the client IP in `X-Forwarded-For` (D1-10) | no | Render env |
-| `EMAIL_API_KEY` | provider key for OTP mail (Ankit) | **yes** | Render env (secret) |
+| `EMAIL_API_KEY` | provider key for OTP mail (OTP flow owner) | **yes** | Render env (secret) |
 | `INTERNAL_API_KEY` | only if Guide service auth is enabled | **yes** | Render env (secret) |
 
 ### Setu Guide (`ujala100/setu-guide`)
@@ -91,7 +91,7 @@ atlas dbusers update setu_prod_app \
 
 | Variable | Production value / source | New secret? | Where |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | production Node URL (Ankit, D3-18) | no (public) | EAS/host env |
+| `EXPO_PUBLIC_API_URL` | production Node URL (Karan, D3-18) | no (public) | EAS/host env |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | public OAuth client ID | no (public) | EAS/host env |
 
 ### Must be newly generated (never reused from dev/staging)

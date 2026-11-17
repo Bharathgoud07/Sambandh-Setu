@@ -13,8 +13,8 @@ No secret values belong in this file. Env names are in
 - [ ] Day 1/2 PRs merged into `dev` (backend #1–#6, guide #44–#47).
 - [ ] `dev` CI green for backend and guide.
 - [ ] Production Atlas project/cluster/user created (D3-11; already done).
-- [ ] Production values generated and stored outside the repo
-      (`C:\Users\adity\.setu-secrets\prod\`).
+- [ ] Production values generated and stored in the approved secure secret
+      store outside the repo.
 - [ ] Render free capacity accepted (2 staging + 2 production services exceed
       the ~750 h/month free allowance). Decide what may sleep; **do not
       upgrade**.
@@ -25,8 +25,8 @@ No secret values belong in this file. Env names are in
 > `dep-dbtv2b3m8hqs73dkv83g`). `GET /health` returns
 > `200 {"data":{"status":"ready"}}`. Helmet, the CORS allow-list and rate
 > limiting now pass in production. The remaining smoke failures are the OTP
-> request route and the Node `/guide/chat` route, which are still not on
-> `dev`.
+> request/verify routes and the Node `/guide/chat` route, which are still not on
+> `dev`. The agreed OTP paths are `/auth/otp/request` and `/auth/otp/verify`.
 
 ## 1. Production URLs (live)
 
@@ -48,8 +48,8 @@ Tell Ankit and Pooja as soon as the remaining smoke checks are green.
 5. Health check path: `/health`.
 6. Environment → add (values from the secure files, never from chat):
    - `NODE_ENV=production`
-   - `MONGODB_URI` → `C:\Users\adity\.setu-secrets\prod\mongodb-uri.txt`
-   - `JWT_SECRET` → `C:\Users\adity\.setu-secrets\prod\jwt-secret.txt`
+   - `MONGODB_URI` → approved secure secret store entry (never in git/chat)
+   - `JWT_SECRET` → approved secure secret store entry (64 chars)
    - `GUIDE_SERVICE_URL` → the production Guide URL (no trailing slash)
    - `SENTRY_DSN` (optional until D2-23 is unblocked)
    - `CORS_ALLOWED_ORIGINS` with the exact comma-separated browser origins
@@ -124,9 +124,11 @@ Checks (all synthetic data):
    frame / HSTS).
 3. CORS does not echo a random origin.
 4. Auth rate limit returns **429** with `error.code`.
-5. OTP request endpoint responds 2xx.
+5. OTP request endpoint responds 2xx; `/auth/otp/verify` exists and rejects an
+   invalid code (not 404).
 6. Node `/guide/chat` returns a reply or `fallback: true`.
-7. Guide `/health` answers in under 5 s on the first call.
+7. Guide `/health` answers in under 5 s after the free instance is awake. The
+   script measures the cold-start wake separately; cold starts are accepted.
 8. `/me`, `/connections`, `/chats` refuse unauthenticated access (401/403).
 
 `SMOKE_TOKEN` is required for check 6. Production `NODE_ENV=production`
@@ -135,7 +137,8 @@ approved test account (never a real pilot's token). Export it without putting
 it in shell history:
 
 ```powershell
-$env:SMOKE_TOKEN = (Get-Content "C:\Users\adity\.setu-secrets\prod\smoke-token.txt" -Raw).Trim()
+# Read from the approved secure store; replace <secure-store> locally.
+$env:SMOKE_TOKEN = (Get-Content "<secure-store>\smoke-token.txt" -Raw).Trim()
 ```
 
 `--allow-skips` is for local dry runs only; a production run with skips is a
@@ -150,12 +153,12 @@ service; no real user data or secret was sent.
 | Check | Result | Evidence |
 |---|---|---|
 | `/health` 200 + DB ready | PASS | `200 {"data":{"status":"ready"}}` |
-| Guide first call under 5 s | PASS | `/health` 200; Guide `/v1/guide/chat` 200 |
+| Guide warm response under 5 s | PASS | 0.425 s warm; 34.5 s cold start (22.8 s on 2026-11-16); cold start accepted by free-tier policy |
 | Protected routes refuse unauthenticated access | PASS | `/me`, `/connections`, `/chats` returned 401 |
 | Security headers | PASS | HSTS, CSP, `x-content-type-options: nosniff`, `x-frame-options: SAMEORIGIN`; no `x-powered-by` |
 | CORS refuses a random origin | PASS | unknown origin gets no ACAO; app/website origins get exact ACAO |
 | Auth rate limit returns 429 | PASS | limiter headers show `limit=5`; five-request probe returned 429 |
-| OTP request responds | FAIL | `/auth/otp/request` returns 404 (`NOT_FOUND`) |
+| OTP request + verify respond | FAIL | `/auth/otp/request` returns 404 (`NOT_FOUND`); `/auth/otp/verify` is not deployed |
 | Node `/guide/chat` reply/fallback | FAIL | route not on `dev`; `SMOKE_TOKEN` also required |
 
 Result: **6 passed, 2 failed**. Do not mark D3-12 done until all eight checks

@@ -19,11 +19,13 @@ Updated: 2026-11-17.
 > inside Sambandh (one page), target **20 Nov 2026**; community/astrology/services
 > stay under Sambandh for now. Do not force a second login. The current OTP demo
 > shows the code on screen and does not deliver OTP; this must be fixed before
-> live. Ankit's laptop is unavailable until 20 Nov (back 21 Nov), so Helmet/CORS/
-> rate-limit work is at risk for the deadline. Source: Read.ai transcript.
+> live. Helmet, the CORS allow-list and auth rate limiting landed and are live
+> in production as of 17 Nov; the remaining blockers are OTP and the Node
+> `/guide/chat` route. Source: Read.ai transcript.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
-> host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
+> approved secure secret store outside git; see `docs/env/production-env.md`
+> for the required entries.
 >
 > **Free-only policy:** no paid plan, paid add-on, paid static IP or paid backup
 > tier. Production stays on Render Free and Atlas M0. If a free limit blocks
@@ -76,7 +78,7 @@ direct `/health` checks.
 
 | Item | Local | Staging | Production |
 |---|---|---|---|
-| Node URL | `http://localhost:5000` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (build blocked on PR #3) |
+| Node URL | `http://localhost:5000` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (live 2026-11-17) |
 | Guide URL | `http://localhost:8000` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` |
 | Atlas project | local Mongo | `Project 0` (`6af73245bc56668ae12d4704`) | `Setu Production` (`6af7de8d05cbff3cac56c9e5`) |
 | Atlas cluster | local | `setu-staging` | `setu-production` (`6af7de987eb8f34eea9760c8`) |
@@ -197,8 +199,10 @@ Full step-by-step: `docs/deploy-production.md`.
 6. Health check `/health`.
 7. Env: `USE_MOCK=true`, `LLM_PROVIDER=placeholder`, limits/cache/log values
    from section 3.
-8. Deploy; verify `GET /health` → `200 {"status":"ok"}` and first response
-   under 5 s.
+8. Deploy; verify `GET /health` → `200 {"status":"ok"}`. After the free
+   instance is awake, the warm response must be under 5 s. Measure the cold
+   start separately; Render Free cold starts are accepted (22.8 s observed on
+   2026-11-16, 34.5 s on 2026-11-17).
 
 Do **not** use the repository Dockerfile unchanged: it hardcodes port 8000 and
 does not bind Render's `$PORT`. Either use native Python or override the CMD.
@@ -432,7 +436,7 @@ Severity:
 | Level | Examples | Response |
 |---|---|---|
 | P0 | prod API/DB down, auth broken, data leak/privacy breach, exposed secret, 5xx >10% for 5 min | acknowledge ≤5 min; report the same minute if leak; rollback/escalate |
-| P1 | Guide down or fallback failing, one prod monitor down, backups failing, first call >5 s | acknowledge ≤15 min; fix or fallback |
+| P1 | Guide down or fallback failing, one prod monitor down, backups failing, warm Guide response >5 s | acknowledge ≤15 min; fix or fallback |
 | P2 | staging issues, cosmetic, non-user-facing | next working block |
 
 UptimeRobot → alert contact `9033668` (team channel; confirm the address in the
@@ -458,7 +462,7 @@ Slack/Discord webhook lands.
 |---|---|---|
 | DevOps 1, Atlas, Render, smoke, backups | Aditya | this runbook |
 | DevOps 2, security headers/CORS/rate limits/email/CI | Ankit | D3-18/D3-25 handoffs |
-| API contract, OTP, `/guide/chat` | Sakshi | blocks smoke checks 4–6 |
+| API contract, OTP, `/guide/chat` | Sakshi | blocks smoke checks 5 and 6 |
 | Guide service/AI fallback | Ujala | `USE_MOCK` owner |
 | Frontend release/signed build | Karan | `EXPO_PUBLIC_API_URL`, `USE_MOCK=false` |
 | Website/waitlist/launch comms | Pooja | |
@@ -479,7 +483,7 @@ Exit criteria (Day 3):
       accepted by the lead. (Drill **PASSED** 2026-11-16; lead acceptance
       pending.)
 - [ ] Email OTP signup works end to end.
-- [ ] Security headers, CORS allow-list, auth rate limit live.
+- [x] Security headers, CORS allow-list, auth rate limit live (verified 2026-11-17).
 - [ ] Guide four quick actions + safe fallback work through Node.
 - [ ] Signed release build points at the production Node URL.
 - [ ] Website/waitlist live.
@@ -490,13 +494,13 @@ Current gaps (2026-11-17):
 | Gap | Impact | Owner |
 |---|---|---|
 | Production smoke **6 passed / 2 failed** | cannot mark D3-12 done | lead/reviewers |
-| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
+| `/auth/otp/request` + `/auth/otp/verify`, and `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working. `/auth/send-otp` and `/auth/verify-otp` are **not** the agreed contract. | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
 | Frontend bundle `REPLACE-WITH-STAGING-URL`, `USE_MOCK=true` | release points at staging/mock | Karan |
 | Staging `dev-login` blocked because `NODE_ENV=production` | staging UI login path broken; production needs OTP | Sakshi/Ankit |
 | UptimeRobot API key exposed earlier | automation key must be rotated | Aditya |
-| Guide cold start: first production check returned 502, later `GET /health` 200 in 22.8 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness | Aditya/Ujala |
+| Guide cold start: first production check returned 502; later `GET /health` 200 in 22.8 s (16 Nov) and 34.5 s (17 Nov); warm response 0.4 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness; the smoke test warms the instance before the <5 s check | Aditya/Ujala |
 | Free-hour decision (2026-11-16): staging keep-warm paused; production checks 30 min | cold starts and alert lag up to 30 min; no paid plan | Aditya |
 
 ## 13. Troubleshooting
@@ -510,7 +514,7 @@ Current gaps (2026-11-17):
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
 | `mongodump` says `listCollections` denied | DB user role scope | set `readWrite` on `sambandh_setu`, not `admin`; re-run |
-| Slow first Guide call | free instance asleep | expected with the 30-minute check; retry after the instance wakes. Paid always-on is not approved. |
+| Slow Guide call after wake still >5 s | warm response time, Render logs | investigate; cold starts alone are expected with the 30-minute check. Paid always-on is not approved. |
 | Port bind error on Guide | Dockerfile hardcodes 8000 | use native Python / `$PORT` |
 | Frontend hits staging | bundle string | rebuild with prod `EXPO_PUBLIC_API_URL` |
 | OTP email missing | `EMAIL_API_KEY`, provider logs | fix key; check spam; do not log OTP |
