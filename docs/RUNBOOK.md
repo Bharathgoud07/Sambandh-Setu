@@ -489,12 +489,28 @@ Exit criteria (Day 3):
 - [ ] Website/waitlist live.
 - [ ] Closed test started.
 
+### Confirmed OTP / Guide contract (Sakshi, 2026-11-17)
+
+| Item | Confirmed value |
+|---|---|
+| OTP request | `POST /auth/otp/request` with `{ "email": "..." }` |
+| OTP verify | `POST /auth/otp/verify` with `{ "email": "...", "code": "123456" }` |
+| OTP rules | 6 digits; 10-minute expiry; 30-second resend cooldown; max 5 verify attempts |
+| Verify success | top-level `token`, `user`, `isNewUser` (no `data` wrapper) |
+| Verify errors | `400 INVALID_OTP`; locked after 5 failures with `429 OTP_LOCKED` |
+| Request limits | 20 requests/IP/15 min and 5 requests/email/15 min |
+| Email config | `EMAIL_PROVIDER=brevo`, `EMAIL_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME` |
+| Guide bridge | `POST /guide/chat` with auth + connection-membership validation |
+| Local commits | OTP `ca5b559`, Guide bridge `d640071`; both unpushed pending repo access |
+
+Production email delivery and authenticated staging Guide E2E remain pending. Use a team-approved inbox through `SMOKE_EMAIL`; do not paste addresses or secrets into chat, commits, PRs or logs.
+
 Current gaps (2026-11-17):
 
 | Gap | Impact | Owner |
 |---|---|---|
 | Production smoke **6 passed / 2 failed** | cannot mark D3-12 done | lead/reviewers |
-| `/auth/otp/request` + `/auth/otp/verify`, and `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working. `/auth/send-otp` and `/auth/verify-otp` are **not** the agreed contract. | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
+| OTP + Guide bridge code exists only locally on Sakshi's machine (`ca5b559`, `d640071`); not pushed, no PR yet. `/auth/otp/request`, `/auth/otp/verify` and Node `/guide/chat` are still 404 in production. `/auth/send-otp` and `/auth/verify-otp` are **not** the contract. | OTP + `/guide/chat` smoke checks fail; no production login path | Sakshi/Ujala/Bharath (repo access) |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
 | Frontend bundle `REPLACE-WITH-STAGING-URL`, `USE_MOCK=true` | release points at staging/mock | Karan |

@@ -66,7 +66,10 @@ atlas dbusers update setu_prod_app \
 | `SENTRY_DSN` | new production Sentry project/DSN | **yes** | Render env (secret) |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact website + Expo web origins; no `*` (D1-09) | no | Render env |
 | `TRUST_PROXY` | `1`; Render terminates TLS and supplies the client IP in `X-Forwarded-For` (D1-10) | no | Render env |
+| `EMAIL_PROVIDER` | `brevo` for production OTP mail (confirmed by Sakshi, 2026-11-17) | no | Render env |
 | `EMAIL_API_KEY` | provider key for OTP mail (OTP flow owner) | **yes** | Render env (secret) |
+| `EMAIL_FROM` | verified Brevo sender address; configured by the deployment owner | no | Render env |
+| `EMAIL_FROM_NAME` | display name on OTP mail (confirmed by Sakshi, 2026-11-17) | no | Render env |
 | `INTERNAL_API_KEY` | only if Guide service auth is enabled | **yes** | Render env (secret) |
 
 ### Setu Guide (`ujala100/setu-guide`)

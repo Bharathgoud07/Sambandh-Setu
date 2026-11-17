@@ -215,7 +215,11 @@ production run must not use --allow-skips.`);
         if (![400, 401, 403, 422].includes(verify.status)) {
             throw new Error(`${options.otpVerifyPath} did not reject an invalid code (status ${verify.status}, code=${errorCode(verify.text) ?? "none"})`);
         }
-        return `request ${request.status}, verify rejects invalid code (${verify.status})`;
+        const verifyCode = errorCode(verify.text);
+        if (verifyCode && !["INVALID_OTP", "OTP_LOCKED"].includes(verifyCode)) {
+            throw new Error(`${options.otpVerifyPath} returned unexpected code ${verifyCode}`);
+        }
+        return `request ${request.status}, verify rejects invalid code (${verify.status}${verifyCode ? `, code=${verifyCode}` : ""})`;
     });
 
     await run("auth rate limit returns 429 in error shape", async () => {
