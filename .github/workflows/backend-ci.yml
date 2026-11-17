@@ -43,3 +43,7 @@ jobs:
 
       - name: Rate limiter tests
         run: npm run --if-present test:ratelimit
+
+      - name: Production config isolation tests
+        working-directory: .
+        run: node --test ./test/prod-config-isolation.test.js
