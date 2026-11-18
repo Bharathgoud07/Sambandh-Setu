@@ -51,9 +51,10 @@ free always-on option or paid plan is approved; alert detection can lag by up
 to 30 minutes.
 
 A direct Guide `GET /health` returned `200 {"status":"ok"}` in 22.8 s after the
-first Render cold start. D3-14 still needs the UptimeRobot test-alert receipt
-confirmation from contact `9033668`; both production monitors themselves are
-Up.
+first Render cold start on 16 Nov and 34.5 s on 17 Nov; the warm response was
+0.425 s. Cold starts are accepted by the free-tier policy. D3-14 still needs
+the UptimeRobot test-alert receipt confirmation from contact `9033668`; both
+production monitors themselves are Up.
 
 Script alternative (reads the API key from a local file; prints IDs only):
 
@@ -72,7 +73,7 @@ powershell -File scripts/setup-prod-monitors.ps1 -DryRun `
 ```
 
 > The UptimeRobot main API key was exposed earlier; rotate it and store the new
-> key in `C:\Users\adity\.setu-secrets\uptimerobot-api-key.txt` before using
+> key in the approved secure secret store (`uptimerobot-api-key`) before using
 > the script.
 
 ## 2. Trigger and confirm a test alert

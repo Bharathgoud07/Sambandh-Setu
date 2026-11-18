@@ -1,11 +1,12 @@
-# Setu launch runbook
+﻿# Setu launch runbook
 
 Owner: Aditya (DevOps 1). Version: 1.0 (draft until production smoke passes).
-Updated: 2026-11-16.
+Updated: 2026-11-17.
 
-> **Launch-day status (2026-11-16):** staging is live; production Atlas, Guide
+> **Launch-day status (2026-11-17):** staging is live; production Atlas, Guide
 > and Node are live. Production Node `/health` returns `200 ready`; the smoke
-> test is **3 passed / 5 failed**. OTP, security middleware (Helmet/CORS) and
+> test is **6 passed / 2 failed**. Helmet, the CORS allow-list and rate limiting
+> are now live (deploy `dep-dbtv2b3m8hqs73dkv83g`, commit `d2e90ee`); OTP and
 > Node `/guide/chat` are still not on `dev`. The production DB role was
 > corrected, a manual dump/restore drill passed, and both production monitors
 > exist (Guide liveness Up; Node `/health` Up). Free-hour decision (2026-11-16):
@@ -18,11 +19,13 @@ Updated: 2026-11-16.
 > inside Sambandh (one page), target **20 Nov 2026**; community/astrology/services
 > stay under Sambandh for now. Do not force a second login. The current OTP demo
 > shows the code on screen and does not deliver OTP; this must be fixed before
-> live. Ankit's laptop is unavailable until 20 Nov (back 21 Nov), so Helmet/CORS/
-> rate-limit work is at risk for the deadline. Source: Read.ai transcript.
+> live. Helmet, the CORS allow-list and auth rate limiting landed and are live
+> in production as of 17 Nov; the remaining blockers are OTP and the Node
+> `/guide/chat` route. Source: Read.ai transcript.
 >
 > **No secret values belong in this file.** Env names only. Values live in the
-> host secret store or `C:\Users\adity\.setu-secrets\` (outside git).
+> approved secure secret store outside git; see `docs/env/production-env.md`
+> for the required entries.
 >
 > **Free-only policy:** no paid plan, paid add-on, paid static IP or paid backup
 > tier. Production stays on Render Free and Atlas M0. If a free limit blocks
@@ -30,13 +33,13 @@ Updated: 2026-11-16.
 
 Companion documents (merge with the D3 PRs):
 
-- `docs/env/production-env.md` — production env names and isolation proof.
-- `docs/deploy-production.md` — exact Render production steps.
-- `docs/deploy-staging.md` — staging deploy (D2-21).
-- `docs/runbooks/backup-restore.md` — staging restore drill (D2-25).
-- `docs/runbooks/prod-alerts-backups.md` — production alert/backup checklist
+- `docs/env/production-env.md` â€” production env names and isolation proof.
+- `docs/deploy-production.md` â€” exact Render production steps.
+- `docs/deploy-staging.md` â€” staging deploy (D2-21).
+- `docs/runbooks/backup-restore.md` â€” staging restore drill (D2-25).
+- `docs/runbooks/prod-alerts-backups.md` â€” production alert/backup checklist
   (D3-14).
-- `docs/observability/error-tracking.md` — optional Sentry setup (D2-23).
+- `docs/observability/error-tracking.md` â€” optional Sentry setup (D2-23).
 
 ## 1. Service map
 
@@ -45,10 +48,10 @@ Companion documents (merge with the D3 PRs):
 | Mobile/web app | Expo React Native | `karanpandeyklk/Setu_app` | `https://setu-app-ten.vercel.app` (web) | release build pending | Karan |
 | Node API | Express + Mongoose | `Bharathgoud07/Sambandh-Setu` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (live) | Bharath / Sakshi |
 | Setu Guide | FastAPI | `ujala100/setu-guide` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` | Ujala |
-| Primary DB | MongoDB Atlas | — | `setu-staging`, M0 | `setu-production`, M0 | Aditya |
-| Web/waitlist | static/Vercel | — | pending | pending | Pooja |
+| Primary DB | MongoDB Atlas | â€” | `setu-staging`, M0 | `setu-production`, M0 | Aditya |
+| Web/waitlist | static/Vercel | â€” | pending | pending | Pooja |
 | Monitoring | UptimeRobot | - | Node `804664536`, Guide `804661990` (paused 2026-11-16) | Guide liveness `804695804` (`/openapi.json`, 30-min); Node `804695322` (`/health`, 30-min) | Aditya |
-| Errors | Sentry (optional) | — | pending DSN | pending DSN | Ankit |
+| Errors | Sentry (optional) | â€” | pending DSN | pending DSN | Ankit |
 
 Request path:
 
@@ -75,7 +78,7 @@ direct `/health` checks.
 
 | Item | Local | Staging | Production |
 |---|---|---|---|
-| Node URL | `http://localhost:5000` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (build blocked on PR #3) |
+| Node URL | `http://localhost:5000` | `https://sambandh-setu-backend.onrender.com` | `https://sambandh-setu-api-prod.onrender.com` (live 2026-11-17) |
 | Guide URL | `http://localhost:8000` | `https://setu-guide-1wiy.onrender.com` | `https://setu-guide-prod.onrender.com` |
 | Atlas project | local Mongo | `Project 0` (`6af73245bc56668ae12d4704`) | `Setu Production` (`6af7de8d05cbff3cac56c9e5`) |
 | Atlas cluster | local | `setu-staging` | `setu-production` (`6af7de987eb8f34eea9760c8`) |
@@ -84,7 +87,7 @@ direct `/health` checks.
 | Database | `sambandh_setu` | `sambandh_setu` | `sambandh_setu` |
 | JWT secret | local test | staging value | **new value** |
 | Guide mode | `.env` | host env | `USE_MOCK=true` for launch |
-| Sentry env | — | `staging` | `production` |
+| Sentry env | â€” | `staging` | `production` |
 
 Rules:
 
@@ -106,7 +109,7 @@ Rules:
 ## 3. Environment variable names (no values)
 
 Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
-`🔒` = secret; store only in the host environment.
+`ðŸ”’` = secret; store only in the host environment.
 
 ### Node API
 
@@ -114,13 +117,14 @@ Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
 |---|---|---|
 | `NODE_ENV` | runtime mode (`production` on hosts) | no |
 | `PORT` | host-assigned HTTP port | no |
-| `MONGODB_URI` | Atlas connection string (contains the DB password) | 🔒 |
-| `JWT_SECRET` | HS256 session signing, at least 32 chars | 🔒 |
+| `MONGODB_URI` | Atlas connection string (contains the DB password) | ðŸ”’ |
+| `JWT_SECRET` | HS256 session signing, at least 32 chars | ðŸ”’ |
 | `GUIDE_SERVICE_URL` | Guide base URL, no trailing slash | no |
-| `SENTRY_DSN` | error reporting (optional until D2-23) | 🔒 |
+| `SENTRY_DSN` | error reporting (optional until D2-23) | ðŸ”’ |
 | `CORS_ALLOWED_ORIGINS` | comma-separated exact browser origins; no wildcard in production (D1-09) | no |
-| `EMAIL_API_KEY` | OTP/transactional email (Ankit) | 🔒 |
-| `INTERNAL_API_KEY` | service-to-service auth if enabled | 🔒 |
+| `TRUST_PROXY` | `1` behind Render's proxy so rate limiting uses the client IP (D1-10) | no |
+| `EMAIL_API_KEY` | OTP/transactional email (Ankit) | ðŸ”’ |
+| `INTERNAL_API_KEY` | service-to-service auth if enabled | ðŸ”’ |
 
 ### Setu Guide
 
@@ -129,7 +133,7 @@ Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
 | `PYTHON_VERSION` | Render runtime pin (`3.11.9`) | no |
 | `USE_MOCK` | `true` = template reply, no vendor call | no |
 | `LLM_PROVIDER` | vendor name (`placeholder` while mock) | no |
-| `LLM_API_KEY` | required only when `USE_MOCK=false` | 🔒 |
+| `LLM_API_KEY` | required only when `USE_MOCK=false` | ðŸ”’ |
 | `LLM_TIMEOUT_SECONDS` | outbound LLM budget (default 10) | no |
 | `RATE_LIMIT_PER_USER` | e.g. `30/minute` | no |
 | `RATE_LIMIT_PER_IP` | e.g. `60/minute` | no |
@@ -138,7 +142,7 @@ Source: `setu-guide/docs/env-vars.md` (guide PR #44) + `SENTRY_DSN` (D2-23).
 | `CACHE_TTL_SECONDS` | cache TTL | no |
 | `CACHE_MAX_ITEMS` | cache size | no |
 | `LOG_LEVEL` | `CRITICAL`..`DEBUG` | no |
-| `INTERNAL_API_KEY` | inbound service auth if enabled | 🔒 |
+| `INTERNAL_API_KEY` | inbound service auth if enabled | ðŸ”’ |
 | `AUTH_METHOD` | `api_key` or `bearer` (planned) | no |
 
 ### Expo frontend
@@ -167,25 +171,26 @@ Vercel bundle still contains `https://REPLACE-WITH-STAGING-URL` and
 
 ### 4.2 Node API (Render, Docker)
 
-1. Render → **New +** → **Web Service** → `Bharathgoud07/Sambandh-Setu`.
+1. Render â†’ **New +** â†’ **Web Service** â†’ `Bharathgoud07/Sambandh-Setu`.
 2. Branch `dev`; runtime **Docker**; Dockerfile `./Dockerfile`; context `.`.
 3. Name `sambandh-setu-api-prod`; region Singapore; plan **Free** (paid plans
    are not approved).
 4. Health check `/health`.
 5. Add env names from section 3; values from the host secret store.
 6. Deploy; wait for **Live**.
-7. Verify: `GET /health` → `200 {"data":{"status":"ready"}}`; `/health/live`
+7. Verify: `GET /health` â†’ `200 {"data":{"status":"ready"}}`; `/health/live`
    and `/health/ready` also 200.
 
-Live 2026-11-16 after PR #3 merged (`dev` commit `7f595cd`, deploy
-`dep-dbtintt9fdbs73bccqe0`); `/health` returned `200 ready` in 0.5 s and the
-UptimeRobot Node monitor is **Up**.
+Live 2026-11-17 after the Helmet/CORS/rate-limit PRs merged (`dev` commit
+`d2e90ee`, deploy `dep-dbtv2b3m8hqs73dkv83g`); `/health` returns `200 ready`,
+security headers and the CORS allow-list are present, and the UptimeRobot Node
+monitor is **Up**.
 
 Full step-by-step: `docs/deploy-production.md`.
 
 ### 4.3 Setu Guide (Render, native Python)
 
-1. Render → **New +** → **Web Service** → `ujala100/setu-guide`.
+1. Render â†’ **New +** â†’ **Web Service** â†’ `ujala100/setu-guide`.
 2. Branch `dev`; runtime **Python**.
 3. Build `pip install -r requirements.txt`.
 4. Start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
@@ -194,8 +199,10 @@ Full step-by-step: `docs/deploy-production.md`.
 6. Health check `/health`.
 7. Env: `USE_MOCK=true`, `LLM_PROVIDER=placeholder`, limits/cache/log values
    from section 3.
-8. Deploy; verify `GET /health` → `200 {"status":"ok"}` and first response
-   under 5 s.
+8. Deploy; verify `GET /health` â†’ `200 {"status":"ok"}`. After the free
+   instance is awake, the warm response must be under 5 s. Measure the cold
+   start separately; Render Free cold starts are accepted (22.8 s observed on
+   2026-11-16, 34.5 s on 2026-11-17).
 
 Do **not** use the repository Dockerfile unchanged: it hardcodes port 8000 and
 does not bind Render's `$PORT`. Either use native Python or override the CMD.
@@ -233,7 +240,7 @@ a real pilot's token. `--allow-skips` is for local dry runs only.
 
 ### 5.1 Node / Guide
 
-1. Render → service → **Deploys** → previous successful deploy → **Rollback**.
+1. Render â†’ service â†’ **Deploys** â†’ previous successful deploy â†’ **Rollback**.
 2. For a code rollback, revert the merge commit on `dev` and let auto-deploy
    run. Never force-push `dev`/`main`.
 3. Re-run `/health` and the smoke test.
@@ -264,12 +271,12 @@ same minute (section 8).
 
 | Source | Where | Notes |
 |---|---|---|
-| Node runtime logs | Render → service → **Logs** | request/error logs; no tokens, OTPs, messages or DB URI |
-| Guide runtime logs | Render → service → **Logs** | provider failures logged without message/topic/ids/key |
+| Node runtime logs | Render â†’ service â†’ **Logs** | request/error logs; no tokens, OTPs, messages or DB URI |
+| Guide runtime logs | Render â†’ service â†’ **Logs** | provider failures logged without message/topic/ids/key |
 | UptimeRobot | dashboard | Node `/health`; Guide `/openapi.json` (HEAD-safe free-plan check); 30-minute interval, alert contact `9033668`; staging monitors paused |
 | Sentry (optional) | Sentry project | 5xx only, PII-free events; no-op without `SENTRY_DSN` |
-| Atlas | Atlas → project → cluster | connections, CPU, disk, slow queries, backup state |
-| Deploy history | Render → Deploys | who/when/commit; rollback source |
+| Atlas | Atlas â†’ project â†’ cluster | connections, CPU, disk, slow queries, backup state |
+| Deploy history | Render â†’ Deploys | who/when/commit; rollback source |
 
 Rules:
 
@@ -324,7 +331,7 @@ It writes outside the repo and prints only paths/lengths.
 | Secret | Rotate | Update | Impact | Verify |
 |---|---|---|---|---|
 | `JWT_SECRET` | new 32+ random value | Render Node env | all sessions invalid | `/health`; new login/OTP |
-| DB password | Atlas → Database Access → edit `setu_prod_app` → generate | Render `MONGODB_URI` | brief DB auth failures until redeploy | `/health` ready; write/read |
+| DB password | Atlas â†’ Database Access â†’ edit `setu_prod_app` â†’ generate | Render `MONGODB_URI` | brief DB auth failures until redeploy | `/health` ready; write/read |
 | `LLM_API_KEY` | provider console | Render Guide env | LLM calls fail until redeploy | Guide chat; logs |
 | `SENTRY_DSN` | Sentry project key | Render Node env | old events stop | send a test 5xx |
 | `EMAIL_API_KEY` | email provider | Render Node env | OTP mail stops until updated | request OTP |
@@ -345,7 +352,7 @@ Emergency (leak/exposure):
 
 - Production: `setu-production`, M0, `backupEnabled=false`. No Cloud
   Backup/PITR.
-- Fallback: manual `mongodump`; RPO = dump interval (up to 24 h), RTO ≈ 10 min
+- Fallback: manual `mongodump`; RPO = dump interval (up to 24 h), RTO â‰ˆ 10 min
   at current size.
 - Production drill (D3-14, 2026-11-16): after correcting the DB role, one
   synthetic collection/document was dumped and restored into a local `mongo:7`
@@ -418,8 +425,8 @@ M10+ is a paid tier and is **not approved**. Do not click it. The launch path
 is the manual `mongodump` + restore drill above; record RPO up to 24 h as an
 accepted risk.
 
-Only after explicit company budget approval: Atlas → `Setu Production` →
-`setu-production` → **Edit Configuration** → M10 → enable **Cloud Backup** →
+Only after explicit company budget approval: Atlas â†’ `Setu Production` â†’
+`setu-production` â†’ **Edit Configuration** â†’ M10 â†’ enable **Cloud Backup** â†’
 apply. Then `node scripts/check-prod-backup.js` must print a snapshot ID.
 
 ## 10. Alert response
@@ -428,11 +435,11 @@ Severity:
 
 | Level | Examples | Response |
 |---|---|---|
-| P0 | prod API/DB down, auth broken, data leak/privacy breach, exposed secret, 5xx >10% for 5 min | acknowledge ≤5 min; report the same minute if leak; rollback/escalate |
-| P1 | Guide down or fallback failing, one prod monitor down, backups failing, first call >5 s | acknowledge ≤15 min; fix or fallback |
+| P0 | prod API/DB down, auth broken, data leak/privacy breach, exposed secret, 5xx >10% for 5 min | acknowledge â‰¤5 min; report the same minute if leak; rollback/escalate |
+| P1 | Guide down or fallback failing, one prod monitor down, backups failing, warm Guide response >5 s | acknowledge â‰¤15 min; fix or fallback |
 | P2 | staging issues, cosmetic, non-user-facing | next working block |
 
-UptimeRobot → alert contact `9033668` (team channel; confirm the address in the
+UptimeRobot â†’ alert contact `9033668` (team channel; confirm the address in the
 dashboard, do not put personal contact details in this public repo).
 
 Flow:
@@ -455,7 +462,7 @@ Slack/Discord webhook lands.
 |---|---|---|
 | DevOps 1, Atlas, Render, smoke, backups | Aditya | this runbook |
 | DevOps 2, security headers/CORS/rate limits/email/CI | Ankit | D3-18/D3-25 handoffs |
-| API contract, OTP, `/guide/chat` | Sakshi | blocks smoke checks 4–6 |
+| API contract, OTP, `/guide/chat` | Sakshi | blocks smoke checks 5 and 6 |
 | Guide service/AI fallback | Ujala | `USE_MOCK` owner |
 | Frontend release/signed build | Karan | `EXPO_PUBLIC_API_URL`, `USE_MOCK=false` |
 | Website/waitlist/launch comms | Pooja | |
@@ -476,25 +483,41 @@ Exit criteria (Day 3):
       accepted by the lead. (Drill **PASSED** 2026-11-16; lead acceptance
       pending.)
 - [ ] Email OTP signup works end to end.
-- [ ] Security headers, CORS allow-list, auth rate limit live.
+- [x] Security headers, CORS allow-list, auth rate limit live (verified 2026-11-17).
 - [ ] Guide four quick actions + safe fallback work through Node.
 - [ ] Signed release build points at the production Node URL.
 - [ ] Website/waitlist live.
 - [ ] Closed test started.
 
-Current gaps (2026-11-16):
+### Confirmed OTP / Guide contract (Sakshi, 2026-11-17)
+
+| Item | Confirmed value |
+|---|---|
+| OTP request | `POST /auth/otp/request` with `{ "email": "..." }` |
+| OTP verify | `POST /auth/otp/verify` with `{ "email": "...", "code": "123456" }` |
+| OTP rules | 6 digits; 10-minute expiry; 30-second resend cooldown; max 5 verify attempts |
+| Verify success | top-level `token`, `user`, `isNewUser` (no `data` wrapper) |
+| Verify errors | `400 INVALID_OTP`; locked after 5 failures with `429 OTP_LOCKED` |
+| Request limits | 20 requests/IP/15 min and 5 requests/email/15 min |
+| Email config | `EMAIL_PROVIDER=brevo`, `EMAIL_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME` |
+| OTP hashing secret | `OTP_HMAC_SECRET` (32+ chars, separate from `JWT_SECRET`) |
+| Guide bridge | `POST /guide/chat` with auth + connection-membership validation |
+| PRs | OTP PR #23 (`ca5b559`) and Guide PR #24 (`d640071`) are OPEN; #23 targets stale `backend/b1-b2-b3-complete`, #24 stacks on `feature/otp-authentication`; neither is on `dev`; both have zero CI checks |
+
+Production email delivery and authenticated staging Guide E2E remain pending. Use a team-approved inbox through `SMOKE_EMAIL`; do not paste addresses or secrets into chat, commits, PRs or logs.
+
+Current gaps (2026-11-17):
 
 | Gap | Impact | Owner |
 |---|---|---|
-| Production smoke **3 passed / 5 failed** | cannot mark D3-12 done | lead/reviewers |
-| `dev` lacks Helmet, CORS allow-list, auth rate limit | security headers, CORS and 429 smoke checks fail | Ankit (laptop unavailable until 20 Nov; back 21 Nov) |
-| `/auth/otp/request`, OTP verify, `/guide/chat` missing from `dev`; OTP demo shows the code on screen and delivery is not working | OTP + `/guide/chat` smoke checks fail; no production login path; OTP screen-code is a launch blocker | Sakshi/Ujala |
+| Production smoke **6 passed / 2 failed** | cannot mark D3-12 done; smoke also needs `SMOKE_CONNECTION_ID` for the authenticated `/guide/chat` check | lead/reviewers |
+| OTP + Guide bridge code exists only locally on Sakshi's machine (`ca5b559`, `d640071`); not pushed, no PR yet. `/auth/otp/request`, `/auth/otp/verify` and Node `/guide/chat` are still 404 in production. `/auth/send-otp` and `/auth/verify-otp` are **not** the contract. | OTP + `/guide/chat` smoke checks fail; no production login path | Sakshi/Ujala/Bharath (repo access) |
 | Atlas M0 `backupEnabled=false` | no PITR/snapshot; D3-14 backup check fails | lead decision |
 | Production network `0.0.0.0/0` | broad DB exposure | Aditya (temporary) |
 | Frontend bundle `REPLACE-WITH-STAGING-URL`, `USE_MOCK=true` | release points at staging/mock | Karan |
 | Staging `dev-login` blocked because `NODE_ENV=production` | staging UI login path broken; production needs OTP | Sakshi/Ankit |
 | UptimeRobot API key exposed earlier | automation key must be rotated | Aditya |
-| Guide cold start: first production check returned 502, later `GET /health` 200 in 22.8 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness | Aditya/Ujala |
+| Guide cold start: first production check returned 502; later `GET /health` 200 in 22.8 s (16 Nov) and 34.5 s (17 Nov); warm response 0.4 s | UptimeRobot Free sends HEAD; FastAPI `/health` is GET-only, so monitor `/openapi.json` (HEAD 200) as Guide liveness; the smoke test warms the instance before the <5 s check | Aditya/Ujala |
 | Free-hour decision (2026-11-16): staging keep-warm paused; production checks 30 min | cold starts and alert lag up to 30 min; no paid plan | Aditya |
 
 ## 13. Troubleshooting
@@ -508,7 +531,7 @@ Current gaps (2026-11-16):
 | 401 on every request | `JWT_SECRET` changed/missing | update env, redeploy; expect sessions invalid |
 | Mongo auth failed | Atlas user/password, URI encoding | rotate/fix; update Render; never print |
 | `mongodump` says `listCollections` denied | DB user role scope | set `readWrite` on `sambandh_setu`, not `admin`; re-run |
-| Slow first Guide call | free instance asleep | expected with the 30-minute check; retry after the instance wakes. Paid always-on is not approved. |
+| Slow Guide call after wake still >5 s | warm response time, Render logs | investigate; cold starts alone are expected with the 30-minute check. Paid always-on is not approved. |
 | Port bind error on Guide | Dockerfile hardcodes 8000 | use native Python / `$PORT` |
 | Frontend hits staging | bundle string | rebuild with prod `EXPO_PUBLIC_API_URL` |
 | OTP email missing | `EMAIL_API_KEY`, provider logs | fix key; check spam; do not log OTP |
@@ -523,7 +546,7 @@ Current gaps (2026-11-16):
    rollback plan.
 5. After each task: what changed, files, how to verify, Done-when status.
 
-## Appendix A — quick commands
+## Appendix A â€” quick commands
 
 ```bash
 # backend tests
@@ -543,7 +566,7 @@ node scripts/check-prod-backup.js
 mongodump --uri="$MONGODB_URI" --out="/backups/setu-prod-$(date +%F)" --quiet
 ```
 
-## Appendix B — file map
+## Appendix B â€” file map
 
 | Path | Purpose |
 |---|---|
@@ -560,3 +583,4 @@ mongodump --uri="$MONGODB_URI" --out="/backups/setu-prod-$(date +%F)" --quiet
 | `docs/runbooks/backup-restore.md` | staging restore drill |
 | `docs/runbooks/prod-alerts-backups.md` | prod alert/backup checklist |
 | `docs/observability/error-tracking.md` | Sentry setup |
+
