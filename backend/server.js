@@ -11,6 +11,7 @@ const connectionRoutes = require("./routes/connectionRoutes");
 const homeRoutes = require("./routes/homeRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const waitlistRoutes = require("./routes/waitlistRoutes");
 const { notFoundHandler, errorHandler } = require("./middleware/errorMiddleware");
 const ApiError = require("./utils/ApiError");
 const mongoose = require("mongoose");
@@ -52,6 +53,7 @@ app.use("/connections", connectionRoutes);
 app.use("/home", homeRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/chats", chatRoutes);
+app.use("/waitlist", waitlistRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
